@@ -8,10 +8,11 @@ bumperBot.once('ready', () => {
   bumperBot.user?.setActivity(`les tryharders`, {
     type: 'LISTENING',
   });
+  getMembersCount(bumperBot);
 });
 
 bumperBot.on('message', (msg) => {
-    console.log(msg.embeds);
+  console.log(msg.embeds);
   if (msg.content === 'test') {
     msg.channel.send({
       embed: {
@@ -27,17 +28,54 @@ bumperBot.on('message', (msg) => {
   }
 });
 
-// bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
-//   console.log(oldPresence);
-//   console.log(newPresence);
-// });
+bumperBot.on('voiceStateUpdate', () => {
+  getMembersCount(bumperBot);
+});
+
+bumperBot.on('presenceUpdate', () => {
+  getMembersCount(bumperBot);
+});
 
 bumperBot.on('rateLimit', async () => {
   const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
-  const commandsChannel = server?.channels.resolve(process.env.COMMANDS_CHANNEL_ID!);
+  const commandsChannel = server?.channels.resolve(
+    process.env.COMMANDS_CHANNEL_ID!
+  );
   if (commandsChannel && commandsChannel instanceof discord.TextChannel) {
-    commandsChannel.send(`Il semblerait qu'on ait fait sauter le rate limit les mecs, du coup il doit y avoir un bug quelque part, contactez mes devs svp.`);
+    commandsChannel.send(
+      `Il semblerait qu'on ait fait sauter le rate limit les mecs, du coup il doit y avoir un bug quelque part, contactez mes devs svp.`
+    );
   }
-})
+});
+
+function getMembersCount(bumperBot: discord.Client) {
+  const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
+  if (server) {
+    let peopleInVoice = 0;
+    const voiceChannels = server?.channels.cache.filter(
+      (channel) => channel.type === 'voice'
+    );
+
+    if (voiceChannels && voiceChannels.size > 0) {
+      voiceChannels.each((channel) => {
+        peopleInVoice += channel.members.size;
+      });
+    }
+
+    const countingChannel = server?.channels.cache.get(
+      process.env.MEMBERS_COUNT_CHANNEL_ID!
+    );
+    if (countingChannel) {
+      if (peopleInVoice < 1) {
+        const peopleOnline = server?.members.cache.filter(
+          (member) => member.presence.status !== 'offline'
+        ).size;
+        countingChannel.setName(`⚡ ${peopleOnline} membres en ligne`);
+      } else {
+        countingChannel.setName(`📣 ${peopleInVoice} membres en vocal`);
+      }
+    }
+  }
+}
 
 bumperBot.login(process.env.TOKEN);
