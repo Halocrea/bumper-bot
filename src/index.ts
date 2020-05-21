@@ -52,7 +52,7 @@ function getMembersCount(bumperBot: discord.Client) {
   const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
   if (server) {
     let peopleInVoice = 0;
-    const voiceChannels = server?.channels.cache.filter(
+    const voiceChannels = server.channels.cache.filter(
       (channel) => channel.type === 'voice'
     );
 
@@ -62,12 +62,12 @@ function getMembersCount(bumperBot: discord.Client) {
       });
     }
 
-    const countingChannel = server?.channels.cache.get(
+    const countingChannel = server.channels.cache.get(
       process.env.MEMBERS_COUNT_CHANNEL_ID!
     );
     if (countingChannel) {
       if (peopleInVoice < 1) {
-        const peopleOnline = server?.members.cache.filter(
+        const peopleOnline = server.members.cache.filter(
           (member) => member.presence.status !== 'offline'
         ).size;
         countingChannel.setName(`⚡ ${peopleOnline} membres en ligne`);
