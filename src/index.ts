@@ -11,6 +11,14 @@ bumperBot.once('ready', () => {
   getMembersCount(bumperBot);
 });
 
+bumperBot.on('voiceStateUpdate', () => {
+  getMembersCount(bumperBot);
+});
+
+bumperBot.on('presenceUpdate', () => {
+  getMembersCount(bumperBot);
+});
+
 bumperBot.on('message', (msg) => {
   console.log(msg.embeds);
   if (msg.content === 'test') {
@@ -21,19 +29,15 @@ bumperBot.on('message', (msg) => {
       },
     });
   } else {
-    if (msg.embeds.length > 0 && msg.embeds[0].description?.match(/👍/)) {
+    if (
+      msg.author.id === process.env.DISBOARD_BOT_ID &&
+      msg.embeds.length > 0 &&
+      msg.embeds[0].description?.match(/👍/)
+    ) {
       const bumper = msg.embeds[0].description;
       msg.channel.send('yolo');
     }
   }
-});
-
-bumperBot.on('voiceStateUpdate', () => {
-  getMembersCount(bumperBot);
-});
-
-bumperBot.on('presenceUpdate', () => {
-  getMembersCount(bumperBot);
 });
 
 bumperBot.on('rateLimit', async () => {
@@ -70,9 +74,15 @@ function getMembersCount(bumperBot: discord.Client) {
         const peopleOnline = server.members.cache.filter(
           (member) => member.presence.status !== 'offline'
         ).size;
-        countingChannel.setName(`⚡ ${peopleOnline} membres en ligne`);
+        const newName = `⚡ ${peopleOnline} membres en ligne`;
+        if (countingChannel.name !== newName) {
+          countingChannel.setName(newName);
+        }
       } else {
-        countingChannel.setName(`📣 ${peopleInVoice} membres en vocal`);
+        const newName = `📣 ${peopleInVoice} membres en vocal`;
+        if (countingChannel.name !== newName) {
+          countingChannel.setName(`📣 ${peopleInVoice} membres en vocal`);
+        }
       }
     }
   }
