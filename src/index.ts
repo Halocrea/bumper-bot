@@ -15,8 +15,13 @@ bumperBot.on('voiceStateUpdate', () => {
   getMembersCount(bumperBot);
 });
 
-bumperBot.on('presenceUpdate', () => {
-  getMembersCount(bumperBot);
+bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
+  if (
+    newPresence.status === 'offline' ||
+    (oldPresence && oldPresence.status === 'offline')
+  ) {
+    getMembersCount(bumperBot);
+  }
 });
 
 bumperBot.on('message', (msg) => {
