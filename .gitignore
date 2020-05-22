@@ -2,6 +2,8 @@ node_modules
 build
 .env
 
+saves/*.db
+
 # Log files
 npm-debug.log*
 yarn-debug.log*

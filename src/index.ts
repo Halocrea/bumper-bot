@@ -1,5 +1,6 @@
 import * as discord from 'discord.js';
 import * as dotenv from 'dotenv';
+import { updateLastBump } from './models/LastBump';
 
 dotenv.config();
 const bumperBot = new discord.Client();
@@ -55,12 +56,13 @@ bumperBot.on('message', (msg) => {
 
   /* 
     TO DO:
-    - Handle countdown
     - Check on multi bumps
+    - Handle countdown
     - Clean code
   */
 
   if (msg.content.startsWith('test')) {
+    if (msg.author.id === '153809151221301257') msg.channel.send('test');
     msg.channel.send({
       embed: {
         title: 'BUMP',
@@ -73,24 +75,25 @@ bumperBot.on('message', (msg) => {
       msg.embeds.length > 0 &&
       msg.embeds[0].description?.match(/👍/)
     ) {
-      const idMatching = msg.embeds[0].description.match(/[0-9]{18}/);
-      if (idMatching) {
-        const bumperId = idMatching[0];
-        const bumper = msg.guild.members.resolve(bumperId);
-        if (bumper) {
-          const bumpingMessage = bumper.lastMessage;
-          console.log(bumpingMessage?.mentions.members);
-          if (
-            bumpingMessage?.mentions.members &&
-            bumpingMessage?.mentions.members.size > 0
-          ) {
-            const giftedMember = bumpingMessage?.mentions.members.first();
-            handleBumperRole(giftedMember!, msg.guild);
-          } else {
-            handleBumperRole(bumper, msg.guild);
-          }
-        }
-      }
+      updateLastBump();
+      // const idMatching = msg.embeds[0].description.match(/[0-9]{18}/);
+      // if (idMatching) {
+      //   const bumperId = idMatching[0];
+      //   const bumper = msg.guild.members.resolve(bumperId);
+      //   if (bumper) {
+      //     const bumpingMessage = bumper.lastMessage;
+      //     console.log(bumpingMessage?.mentions.members);
+      //     if (
+      //       bumpingMessage?.mentions.members &&
+      //       bumpingMessage?.mentions.members.size > 0
+      //     ) {
+      //       const giftedMember = bumpingMessage?.mentions.members.first();
+      //       handleBumperRole(giftedMember!, msg.guild);
+      //     } else {
+      //       handleBumperRole(bumper, msg.guild);
+      //     }
+      //   }
+      // }
     }
   }
 });

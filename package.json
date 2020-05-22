@@ -16,8 +16,10 @@
   },
   "homepage": "https://github.com/Halocrea/bumper-bot#readme",
   "dependencies": {
+    "@types/better-sqlite3": "^5.4.0",
     "@types/ws": "^7.2.4",
     "@typescript-eslint/eslint-plugin": "^2.34.0",
+    "better-sqlite3": "^7.0.1",
     "discord.js": "^12.2.0",
     "dotenv": "^8.2.0"
   },
