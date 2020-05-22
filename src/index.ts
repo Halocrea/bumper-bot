@@ -11,6 +11,18 @@ bumperBot.once('ready', () => {
   getMembersCount(bumperBot);
 });
 
+bumperBot.on('rateLimit', async () => {
+  const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
+  const commandsChannel = server?.channels.resolve(
+    process.env.COMMANDS_CHANNEL_ID!
+  );
+  if (commandsChannel && commandsChannel instanceof discord.TextChannel) {
+    commandsChannel.send(
+      `Il semblerait qu'on ait fait sauter le rate limit les mecs, du coup il doit y avoir un bug quelque part, contactez mes devs svp.`
+    );
+  }
+});
+
 bumperBot.on('voiceStateUpdate', () => {
   getMembersCount(bumperBot);
 });
@@ -29,7 +41,6 @@ bumperBot.on('message', (msg) => {
 
   /* 
     TO DO:
-    - Handle role removal
     - Handle countdown
     - Check on multi bumps
     - Clean code
@@ -39,7 +50,7 @@ bumperBot.on('message', (msg) => {
     msg.channel.send({
       embed: {
         title: 'BUMP',
-        description: `Bump effectué les tryharders *Mpfmfmfmfpfffmpff* ${msg.author} 👍 ${msg.author.id}`,
+        description: `Bump effectué les tryharders *Mpfmfmfmfpfffmpff* ${msg.author} 👍`,
       },
     });
   } else {
@@ -48,17 +59,21 @@ bumperBot.on('message', (msg) => {
       msg.embeds.length > 0 &&
       msg.embeds[0].description?.match(/👍/)
     ) {
-      const idMatching = msg.embeds[0].description.match(/[0-9]{18}$/);
+      const idMatching = msg.embeds[0].description.match(/[0-9]{18}/);
       if (idMatching) {
         const bumperId = idMatching[0];
         const bumper = msg.guild.members.resolve(bumperId);
         if (bumper) {
           const bumpingMessage = bumper.lastMessage;
-          if (bumpingMessage?.mentions.members) {
+          console.log(bumpingMessage?.mentions.members);
+          if (
+            bumpingMessage?.mentions.members &&
+            bumpingMessage?.mentions.members.size > 0
+          ) {
             const giftedMember = bumpingMessage?.mentions.members.first();
-            handleBumperRole(giftedMember!);
+            handleBumperRole(giftedMember!, msg.guild);
           } else {
-            handleBumperRole(bumper);
+            handleBumperRole(bumper, msg.guild);
           }
         }
       }
@@ -66,23 +81,22 @@ bumperBot.on('message', (msg) => {
   }
 });
 
-bumperBot.on('rateLimit', async () => {
-  const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
-  const commandsChannel = server?.channels.resolve(
-    process.env.COMMANDS_CHANNEL_ID!
-  );
-  if (commandsChannel && commandsChannel instanceof discord.TextChannel) {
-    commandsChannel.send(
-      `Il semblerait qu'on ait fait sauter le rate limit les mecs, du coup il doit y avoir un bug quelque part, contactez mes devs svp.`
-    );
+async function handleBumperRole(
+  bumper: discord.GuildMember,
+  server: discord.Guild
+) {
+  const bumperRole = server.roles.cache.get(process.env.BUMPER_ROLE_ID!);
+  const lastBumpers = bumperRole?.members.array();
+  let newBumper = bumper;
+  if (!lastBumpers?.includes(bumper)) {
+    newBumper = await bumper.roles.add(process.env.BUMPER_ROLE_ID!);
   }
-});
 
-function handleBumperRole(bumper: discord.GuildMember) {
-  if (!bumper.roles.cache.get(process.env.BUMPER_ROLE_ID!)) {
-    bumper.roles.add(process.env.BUMPER_ROLE_ID!);
-    console.log(bumper);
-  }
+  lastBumpers
+    ?.filter((previousBumper) => previousBumper.id !== newBumper.id)
+    .forEach(async (previousBumper) => {
+      await previousBumper.roles.remove(process.env.BUMPER_ROLE_ID!);
+    });
 }
 
 function getMembersCount(bumperBot: discord.Client) {
