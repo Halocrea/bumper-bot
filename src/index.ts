@@ -1,9 +1,17 @@
 import * as discord from 'discord.js';
 import * as dotenv from 'dotenv';
 import { updateLastBump } from './models/LastBump';
+import {
+  getPreviousBumpers,
+  addLastBumper,
+  getLastBumpers,
+  deletePreviousBumpers,
+} from './models/LastBumpers';
 
 dotenv.config();
 const bumperBot = new discord.Client();
+
+let timeoutId: NodeJS.Timeout;
 
 bumperBot.once('ready', () => {
   bumperBot.user?.setActivity(`les tryharders`, {
@@ -56,7 +64,6 @@ bumperBot.on('message', (msg) => {
 
   /* 
     TO DO:
-    - Check on multi bumps
     - Handle countdown
     - Clean code
   */
@@ -75,45 +82,65 @@ bumperBot.on('message', (msg) => {
       msg.embeds.length > 0 &&
       msg.embeds[0].description?.match(/👍/)
     ) {
-      updateLastBump();
-      // const idMatching = msg.embeds[0].description.match(/[0-9]{18}/);
-      // if (idMatching) {
-      //   const bumperId = idMatching[0];
-      //   const bumper = msg.guild.members.resolve(bumperId);
-      //   if (bumper) {
-      //     const bumpingMessage = bumper.lastMessage;
-      //     console.log(bumpingMessage?.mentions.members);
-      //     if (
-      //       bumpingMessage?.mentions.members &&
-      //       bumpingMessage?.mentions.members.size > 0
-      //     ) {
-      //       const giftedMember = bumpingMessage?.mentions.members.first();
-      //       handleBumperRole(giftedMember!, msg.guild);
-      //     } else {
-      //       handleBumperRole(bumper, msg.guild);
-      //     }
-      //   }
-      // }
+      // We save the last bump date
+      const bumpDate = updateLastBump();
+      const idMatching = msg.embeds[0].description.match(/[0-9]{18}/);
+      if (idMatching) {
+        const bumperId = idMatching[0];
+        const bumper = msg.guild.members.resolve(bumperId);
+        if (bumper) {
+          const bumpingMessage = bumper.lastMessage;
+          if (
+            bumpingMessage?.mentions.members &&
+            bumpingMessage?.mentions.members.size > 0
+          ) {
+            const giftedMember = bumpingMessage?.mentions.members.first();
+            handleBumperRole(giftedMember!, msg.guild, bumpDate);
+          } else {
+            handleBumperRole(bumper, msg.guild, bumpDate);
+          }
+        }
+      }
     }
   }
 });
 
 async function handleBumperRole(
   bumper: discord.GuildMember,
-  server: discord.Guild
+  server: discord.Guild,
+  bumpDate: Date
 ) {
   const bumperRole = server.roles.cache.get(process.env.BUMPER_ROLE_ID!);
-  const lastBumpers = bumperRole?.members.array();
-  let newBumper = bumper;
-  if (!lastBumpers?.includes(bumper)) {
-    newBumper = await bumper.roles.add(process.env.BUMPER_ROLE_ID!);
-  }
+  const previousBumpers = getPreviousBumpers(bumpDate);
 
-  lastBumpers
-    ?.filter((previousBumper) => previousBumper.id !== newBumper.id)
-    .forEach(async (previousBumper) => {
-      await previousBumper.roles.remove(process.env.BUMPER_ROLE_ID!);
-    });
+  addLastBumper({ bumpedAt: bumpDate, bumperId: bumper.id });
+  if (previousBumpers && previousBumpers.length > 0) {
+    if (
+      !previousBumpers?.some(
+        (previousBumper) => previousBumper.bumperId === bumper.id
+      )
+    ) {
+      await bumper.roles.add(process.env.BUMPER_ROLE_ID!);
+    }
+
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(async () => {
+      const lastBumpers = getLastBumpers(bumpDate).map(
+        (bumper) => bumper.bumperId
+      );
+      for (let previousBumper of previousBumpers) {
+        if (!lastBumpers.includes(previousBumper.bumperId)) {
+          const bumperToRemoveRole = bumperRole?.members.get(
+            previousBumper.bumperId
+          );
+          await bumperToRemoveRole?.roles.remove(process.env.BUMPER_ROLE_ID!);
+        }
+      }
+      deletePreviousBumpers(bumpDate);
+    }, 1500);
+  } else {
+    await bumper.roles.add(process.env.BUMPER_ROLE_ID!);
+  }
 }
 
 function getMembersCount(bumperBot: discord.Client) {

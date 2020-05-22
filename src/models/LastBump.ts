@@ -31,7 +31,8 @@ export function updateLastBump() {
       return lastBumpDate;
     }
   } else {
-    const newLastBump = 'INSERT INTO last_bump (bumpedAt) VALUES(@bumpedAt)';
+    // We initialize our first last bump
+    const newLastBump = 'INSERT INTO last_bump (bumpedAt) VALUES (@bumpedAt)';
     db.prepare(newLastBump).run({ bumpedAt: bumpDate.toISOString() });
     return bumpDate;
   }
