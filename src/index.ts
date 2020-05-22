@@ -18,7 +18,7 @@ bumperBot.on('rateLimit', async () => {
   );
   if (commandsChannel && commandsChannel instanceof discord.TextChannel) {
     commandsChannel.send(
-      `Il semblerait qu'on ait fait sauter le rate limit les mecs, du coup il doit y avoir un bug quelque part, contactez mes devs svp.`
+      `Il semblerait qu'on ait fait sauter le rate limit les mecs, du coup il doit y avoir un bug quelque part, contactez les admins et/ou mes devs svp.`
     );
   }
 });
@@ -33,6 +33,20 @@ bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
     (oldPresence && oldPresence.status === 'offline')
   ) {
     getMembersCount(bumperBot);
+    if (
+      newPresence.userID === process.env.DISBOARD_BOT_ID ||
+      oldPresence?.userID === process.env.DISBOARD_BOT_ID
+    ) {
+      const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
+      const countdownChannel = server?.channels.cache.get(
+        process.env.BUMP_COUNTDOWN_CHANNEL_ID!
+      );
+      if (newPresence.status === 'offline') {
+        countdownChannel?.setName('⚰️ Bumps off atm');
+      } else {
+        countdownChannel?.setName('😇 Bumps revenus');
+      }
+    }
   }
 });
 
