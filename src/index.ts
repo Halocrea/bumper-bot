@@ -25,12 +25,21 @@ bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
 });
 
 bumperBot.on('message', (msg) => {
-  console.log(msg.embeds);
-  if (msg.content === 'test') {
+  if (!msg.guild) return; // no DM allowed
+
+  /* 
+    TO DO:
+    - Handle role removal
+    - Handle countdown
+    - Check on multi bumps
+    - Clean code
+  */
+
+  if (msg.content.startsWith('test')) {
     msg.channel.send({
       embed: {
         title: 'BUMP',
-        description: `Bump effectué les tryharders *Mpfmfmfmfpfffmpff* ${msg.author} `,
+        description: `Bump effectué les tryharders *Mpfmfmfmfpfffmpff* ${msg.author} 👍 ${msg.author.id}`,
       },
     });
   } else {
@@ -39,8 +48,20 @@ bumperBot.on('message', (msg) => {
       msg.embeds.length > 0 &&
       msg.embeds[0].description?.match(/👍/)
     ) {
-      const bumper = msg.embeds[0].description;
-      msg.channel.send('yolo');
+      const idMatching = msg.embeds[0].description.match(/[0-9]{18}$/);
+      if (idMatching) {
+        const bumperId = idMatching[0];
+        const bumper = msg.guild.members.resolve(bumperId);
+        if (bumper) {
+          const bumpingMessage = bumper.lastMessage;
+          if (bumpingMessage?.mentions.members) {
+            const giftedMember = bumpingMessage?.mentions.members.first();
+            handleBumperRole(giftedMember!);
+          } else {
+            handleBumperRole(bumper);
+          }
+        }
+      }
     }
   }
 });
@@ -56,6 +77,13 @@ bumperBot.on('rateLimit', async () => {
     );
   }
 });
+
+function handleBumperRole(bumper: discord.GuildMember) {
+  if (!bumper.roles.cache.get(process.env.BUMPER_ROLE_ID!)) {
+    bumper.roles.add(process.env.BUMPER_ROLE_ID!);
+    console.log(bumper);
+  }
+}
 
 function getMembersCount(bumperBot: discord.Client) {
   const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
