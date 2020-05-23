@@ -9,7 +9,7 @@ const createLastBump = `CREATE TABLE IF NOT EXISTS last_bumpers (
 )`;
 db.exec(createLastBump);
 
-export interface LastBumper {
+interface LastBumper {
   bumpedAt: Date;
   bumperId: string;
 }

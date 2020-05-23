@@ -45,6 +45,7 @@ bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
     (oldPresence && oldPresence.status === 'offline')
   ) {
     getMembersCount(bumperBot);
+    // We want to display the disboard status if something happened
     if (
       newPresence.userID === process.env.DISBOARD_BOT_ID ||
       oldPresence?.userID === process.env.DISBOARD_BOT_ID
@@ -67,7 +68,6 @@ bumperBot.on('message', (msg) => {
 
   /* 
     TO DO:
-    - Handle countdown
     - Clean code
   */
 
@@ -119,6 +119,7 @@ async function handleBumper(
 
   addLastBumper({ bumpedAt: bumpDate, bumperId: bumper.id });
   if (previousBumpers && previousBumpers.length > 0) {
+    // We don't want to update the role on someone who had the previous bump
     if (
       !previousBumpers?.some(
         (previousBumper) => previousBumper.bumperId === bumper.id
@@ -127,6 +128,7 @@ async function handleBumper(
       await bumper.roles.add(process.env.BUMPER_ROLE_ID!);
     }
 
+    // We clear the previous bumpers to keep the database clean
     clearTimeout(timeoutId);
     timeoutId = setTimeout(async () => {
       const lastBumpers = getLastBumpers(bumpDate).map(
@@ -154,9 +156,11 @@ function handleCountdown(bumperBot: discord.Client, server: discord.Guild) {
     process.env.BUMP_COUNTDOWN_CHANNEL_ID!
   );
 
+  // Initialization
   clearInterval(intervalId);
   let countdownMinutes = 120;
   countdownChannel?.setName(`⏳ 2h00 avant le bump !`);
+
   // Every minute, we refresh the countdown
   intervalId = setInterval(() => {
     countdownMinutes--;
@@ -173,6 +177,8 @@ function handleCountdown(bumperBot: discord.Client, server: discord.Guild) {
   }, 60000);
 }
 
+// We want to display the amount of people in voice chat
+// Else we want to display the amount of people online
 function getMembersCount(bumperBot: discord.Client) {
   const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
   if (server) {

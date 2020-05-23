@@ -8,7 +8,7 @@ const createLastBump = `CREATE TABLE IF NOT EXISTS last_bump (
 )`;
 db.exec(createLastBump);
 
-export function getLastBump() {
+function getLastBump() {
   const getLastBump = 'SELECT * FROM last_bump';
   return db.prepare(getLastBump).get();
 }
