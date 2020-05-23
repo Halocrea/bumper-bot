@@ -55,9 +55,9 @@ bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
         process.env.BUMP_COUNTDOWN_CHANNEL_ID!
       );
       if (newPresence.status === 'offline') {
-        countdownChannel?.setName('⚰️ Bumps off atm');
+        countdownChannel?.setName('🔕 Bumps Offline');
       } else {
-        countdownChannel?.setName('😇 Bumps revenus');
+        countdownChannel?.setName('⌛ Bumps revenus');
       }
     }
   }
@@ -66,38 +66,28 @@ bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
 bumperBot.on('message', (msg) => {
   if (!msg.guild) return; // no DM allowed
 
-  if (msg.content.startsWith('test')) {
-    if (msg.author.id === '153809151221301257') msg.channel.send('test');
-    msg.channel.send({
-      embed: {
-        title: 'BUMP',
-        description: `Bump effectué les tryharders *Mpfmfmfmfpfffmpff* ${msg.author} 👍`,
-      },
-    });
-  } else {
-    if (
-      msg.author.id === process.env.DISBOARD_BOT_ID &&
-      msg.embeds.length > 0 &&
-      msg.embeds[0].description?.match(/👍/)
-    ) {
-      // We save the last bump date
-      const bumpDate = updateLastBump();
-      const idMatching = msg.embeds[0].description.match(/[0-9]{18}/);
-      if (idMatching) {
-        const bumperId = idMatching[0];
-        const bumper = msg.guild.members.resolve(bumperId);
-        if (bumper) {
-          // We get back at the bump message to see if the bump is gifted or not
-          const bumpingMessage = bumper.lastMessage;
-          if (
-            bumpingMessage?.mentions.members &&
-            bumpingMessage?.mentions.members.size > 0
-          ) {
-            const giftedMember = bumpingMessage?.mentions.members.first();
-            handleBumper(giftedMember!, msg.guild, bumpDate, msg);
-          } else {
-            handleBumper(bumper, msg.guild, bumpDate, msg);
-          }
+  if (
+    msg.author.id === process.env.DISBOARD_BOT_ID &&
+    msg.embeds.length > 0 &&
+    msg.embeds[0].description?.match(/👍/)
+  ) {
+    // We save the last bump date
+    const bumpDate = updateLastBump();
+    const idMatching = msg.embeds[0].description.match(/[0-9]{18}/);
+    if (idMatching) {
+      const bumperId = idMatching[0];
+      const bumper = msg.guild.members.resolve(bumperId);
+      if (bumper) {
+        // We get back at the bump message to see if the bump is gifted or not
+        const bumpingMessage = bumper.lastMessage;
+        if (
+          bumpingMessage?.mentions.members &&
+          bumpingMessage?.mentions.members.size > 0
+        ) {
+          const giftedMember = bumpingMessage?.mentions.members.first();
+          handleBumper(giftedMember!, msg.guild, bumpDate, msg);
+        } else {
+          handleBumper(bumper, msg.guild, bumpDate, msg);
         }
       }
     }
@@ -196,7 +186,7 @@ function getMembersCount(bumperBot: discord.Client) {
       process.env.MEMBERS_COUNT_CHANNEL_ID!
     );
     if (countingChannel) {
-      if (peopleInVoice < 1) {
+      if (peopleInVoice < 2) {
         const peopleOnline = server.members.cache.filter(
           (member) => member.presence.status !== 'offline'
         ).size;
@@ -205,9 +195,9 @@ function getMembersCount(bumperBot: discord.Client) {
           countingChannel.setName(newName);
         }
       } else {
-        const newName = `📣 ${peopleInVoice} membres en vocal`;
+        const newName = `📣 ${peopleInVoice} en vocal`;
         if (countingChannel.name !== newName) {
-          countingChannel.setName(`📣 ${peopleInVoice} membres en vocal`);
+          countingChannel.setName(`📢 ${peopleInVoice} en vocal`);
         }
       }
     }
