@@ -160,7 +160,7 @@ function handleCountdown(bumperBot: discord.Client, server: discord.Guild) {
   // Every minute, we refresh the countdown
   intervalId = setInterval(() => {
     countdownMinutes--;
-    const hours = Math.floor(countdownMinutes / 2);
+    const hours = Math.floor(countdownMinutes / 60);
     const minutes = countdownMinutes % 60;
     if (hours === 0 && minutes === 0) {
       countdownChannel?.setName(`🔔 C'est l'heure du bump ! 🔔`);
