@@ -28,8 +28,6 @@ So, this bot:
 - Displays a countdown to the next bump
 - Displays the number of members in voice channels, or online members if there aren't
 
-### 🏠 [Homepage](https://github.com/Halocrea/bumper-bot#readme)
-
 ## Install
 
 ### Create `.env` file and fill it with your information
