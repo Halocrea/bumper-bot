@@ -11,7 +11,10 @@ import {
 dotenv.config();
 const bumperBot = new discord.Client();
 
+// To help handle multi bumps
 let timeoutId: NodeJS.Timeout;
+// To refresh the bump countdown
+let intervalId: NodeJS.Timeout;
 
 bumperBot.once('ready', () => {
   bumperBot.user?.setActivity(`les tryharders`, {
@@ -89,15 +92,16 @@ bumperBot.on('message', (msg) => {
         const bumperId = idMatching[0];
         const bumper = msg.guild.members.resolve(bumperId);
         if (bumper) {
+          // We get back at the bump message to see if the bump is gifted or not
           const bumpingMessage = bumper.lastMessage;
           if (
             bumpingMessage?.mentions.members &&
             bumpingMessage?.mentions.members.size > 0
           ) {
             const giftedMember = bumpingMessage?.mentions.members.first();
-            handleBumperRole(giftedMember!, msg.guild, bumpDate);
+            handleBumper(giftedMember!, msg.guild, bumpDate);
           } else {
-            handleBumperRole(bumper, msg.guild, bumpDate);
+            handleBumper(bumper, msg.guild, bumpDate);
           }
         }
       }
@@ -105,7 +109,7 @@ bumperBot.on('message', (msg) => {
   }
 });
 
-async function handleBumperRole(
+async function handleBumper(
   bumper: discord.GuildMember,
   server: discord.Guild,
   bumpDate: Date
@@ -138,9 +142,35 @@ async function handleBumperRole(
       }
       deletePreviousBumpers(bumpDate);
     }, 1500);
+
+    handleCountdown(bumperBot, server);
   } else {
     await bumper.roles.add(process.env.BUMPER_ROLE_ID!);
   }
+}
+
+function handleCountdown(bumperBot: discord.Client, server: discord.Guild) {
+  const countdownChannel = server.channels.cache.get(
+    process.env.BUMP_COUNTDOWN_CHANNEL_ID!
+  );
+
+  clearInterval(intervalId);
+  let countdownMinutes = 120;
+  countdownChannel?.setName(`⏳ 2h00 avant le bump !`);
+  // Every minute, we refresh the countdown
+  intervalId = setInterval(() => {
+    countdownMinutes--;
+    const hours = Math.floor(countdownMinutes / 2);
+    const minutes = countdownMinutes % 60;
+    if (hours === 0 && minutes === 0) {
+      countdownChannel?.setName(`🔔 C'est l'heure du bump ! 🔔`);
+      clearInterval(intervalId);
+    } else {
+      countdownChannel?.setName(
+        `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`
+      );
+    }
+  }, 60000);
 }
 
 function getMembersCount(bumperBot: discord.Client) {
