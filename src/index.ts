@@ -94,9 +94,9 @@ bumperBot.on('message', (msg) => {
             bumpingMessage?.mentions.members.size > 0
           ) {
             const giftedMember = bumpingMessage?.mentions.members.first();
-            handleBumper(giftedMember!, msg.guild, bumpDate);
+            handleBumper(giftedMember!, msg.guild, bumpDate, msg);
           } else {
-            handleBumper(bumper, msg.guild, bumpDate);
+            handleBumper(bumper, msg.guild, bumpDate, msg);
           }
         }
       }
@@ -107,12 +107,16 @@ bumperBot.on('message', (msg) => {
 async function handleBumper(
   bumper: discord.GuildMember,
   server: discord.Guild,
-  bumpDate: Date
+  bumpDate: Date,
+  msg: discord.Message
 ) {
   const bumperRole = server.roles.cache.get(process.env.BUMPER_ROLE_ID!);
   const previousBumpers = getPreviousBumpers(bumpDate);
 
   addLastBumper({ bumpedAt: bumpDate, bumperId: bumper.id });
+  msg.channel.send(
+    `✅ Bump effectué pour : ***${bumper.nickname ?? bumper.user.username}***`
+  );
   if (previousBumpers && previousBumpers.length > 0) {
     // We don't want to update the role on someone who had the previous bump
     if (
