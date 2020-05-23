@@ -28,6 +28,18 @@ So, this bot:
 - Displays a countdown to the next bump
 - Displays the number of members in voice channels, or online members if there aren't
 
+### Permissions required
+
+In order to work properly, this bot will need this set of permissions globally:
+
+- Manage Roles
+- View Channels
+- Send Messages
+- Read Message History
+- Connect
+
+He also needs to be able to connect to the voice channels whose the IDs have been given.
+
 ## Install
 
 ### Create `.env` file and fill it with your information
