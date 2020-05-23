@@ -66,11 +66,6 @@ bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
 bumperBot.on('message', (msg) => {
   if (!msg.guild) return; // no DM allowed
 
-  /* 
-    TO DO:
-    - Clean code
-  */
-
   if (msg.content.startsWith('test')) {
     if (msg.author.id === '153809151221301257') msg.channel.send('test');
     msg.channel.send({
