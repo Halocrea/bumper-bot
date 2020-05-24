@@ -19,7 +19,7 @@ export function updateLastBump() {
   if (lastBump) {
     const lastBumpDate = new Date(lastBump.bumpedAt);
     // To prevent multi bumps from creating few time differences
-    if (bumpDate.getTime() - lastBumpDate.getTime() > 3000) {
+    if (getTimeDifferenceWithLastBump() > 3000) {
       const updateLastBump =
         'UPDATE last_bump SET bumpedAt = ? WHERE bumpedAt = ?';
       db.prepare(updateLastBump).run([
@@ -36,4 +36,11 @@ export function updateLastBump() {
     db.prepare(newLastBump).run({ bumpedAt: bumpDate.toISOString() });
     return bumpDate;
   }
+}
+
+// Return the time difference from now to the last bump in milliseconds
+export function getTimeDifferenceWithLastBump(): number {
+  const lastBump = new Date(getLastBump().bumpedAt);
+  const now = new Date();
+  return now.getTime() - lastBump.getTime();
 }

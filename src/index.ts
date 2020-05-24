@@ -1,6 +1,9 @@
 import * as discord from 'discord.js';
 import * as dotenv from 'dotenv';
-import { updateLastBump } from './models/LastBump';
+import {
+  updateLastBump,
+  getTimeDifferenceWithLastBump,
+} from './models/LastBump';
 import {
   getPreviousBumpers,
   addLastBumper,
@@ -15,12 +18,17 @@ const bumperBot = new discord.Client();
 let timeoutId: NodeJS.Timeout;
 // To refresh the bump countdown
 let intervalId: NodeJS.Timeout;
+// To reset the countdown when the disboard bot is alive again
+let disboardTimeoutId: NodeJS.Timeout;
 
 bumperBot.once('ready', () => {
   bumperBot.user?.setActivity(`les tryharders`, {
     type: 'LISTENING',
   });
   getMembersCount(bumperBot);
+
+  const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
+  handleCountdown(server!, true);
 });
 
 bumperBot.on('rateLimit', async () => {
@@ -58,6 +66,10 @@ bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
         countdownChannel?.setName('🔕 Bumps Offline');
       } else {
         countdownChannel?.setName('⌛ Bumps revenus');
+        disboardTimeoutId = setTimeout(
+          () => handleCountdown(server!, true),
+          8 * 60000
+        );
       }
     }
   }
@@ -142,16 +154,42 @@ async function handleBumper(
   }
 }
 
-function handleCountdown(server: discord.Guild) {
+function handleCountdown(server: discord.Guild, countdownUpdate = false) {
   const countdownChannel = server.channels.cache.get(
     process.env.BUMP_COUNTDOWN_CHANNEL_ID!
   );
 
-  // Initialization
-  clearInterval(intervalId);
-  let countdownMinutes = 120;
-  countdownChannel?.setName(`⏳ 2h00 avant le bump !`);
+  // We clear the Disboard timeout because if we're here, it means that we don't need it anymore
+  clearTimeout(disboardTimeoutId);
 
+  if (countdownUpdate) {
+    const timeDifference = getTimeDifferenceWithLastBump();
+    if (timeDifference <= 7200000) {
+      const countdownMinutes = 120 - Math.floor(timeDifference / 60000);
+      const hours = Math.floor(countdownMinutes / 60);
+      const minutes = countdownMinutes % 60;
+      countdownChannel?.setName(
+        `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`
+      );
+
+      setCountdownInterval(countdownMinutes, countdownChannel!);
+    } else {
+      countdownChannel?.setName(`🔔 C'est l'heure du bump ! 🔔`);
+    }
+  } else {
+    // Initialization
+    clearInterval(intervalId);
+    let countdownMinutes = 120;
+    countdownChannel?.setName(`⏳ 2h00 avant le bump !`);
+
+    setCountdownInterval(countdownMinutes, countdownChannel!);
+  }
+}
+
+function setCountdownInterval(
+  countdownMinutes: number,
+  countdownChannel: discord.GuildChannel
+) {
   // Every minute, we refresh the countdown
   intervalId = setInterval(() => {
     countdownMinutes--;
