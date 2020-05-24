@@ -69,7 +69,8 @@ bumperBot.on('message', (msg) => {
   if (
     msg.author.id === process.env.DISBOARD_BOT_ID &&
     msg.embeds.length > 0 &&
-    msg.embeds[0].description?.match(/👍/)
+    (msg.embeds[0].description?.match(/:thumbsup:/) ||
+      msg.embeds[0].description?.match(/👍/))
   ) {
     // We save the last bump date
     const bumpDate = updateLastBump();
@@ -134,13 +135,14 @@ async function handleBumper(
       deletePreviousBumpers(bumpDate);
     }, 1500);
 
-    handleCountdown(bumperBot, server);
+    handleCountdown(server);
   } else {
     await bumper.roles.add(process.env.BUMPER_ROLE_ID!);
+    handleCountdown(server);
   }
 }
 
-function handleCountdown(bumperBot: discord.Client, server: discord.Guild) {
+function handleCountdown(server: discord.Guild) {
   const countdownChannel = server.channels.cache.get(
     process.env.BUMP_COUNTDOWN_CHANNEL_ID!
   );
