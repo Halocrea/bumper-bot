@@ -33,6 +33,7 @@ So, this bot:
 In order to work properly, this bot will need this set of permissions globally:
 
 - Manage Roles
+- Manage Channels
 - View Channels
 - Send Messages
 - Read Message History
