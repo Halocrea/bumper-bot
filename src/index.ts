@@ -230,7 +230,7 @@ function getMembersCount(bumperBot: discord.Client) {
         const peopleOnline = server.members.cache.filter(
           (member) => member.presence.status !== 'offline'
         ).size;
-        const newName = `⚡ ${peopleOnline} membres en ligne`;
+        const newName = `⚡ ${peopleOnline} en ligne`;
         if (countingChannel.name !== newName) {
           countingChannel.setName(newName);
         }
