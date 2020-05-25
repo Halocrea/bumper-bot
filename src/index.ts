@@ -48,29 +48,23 @@ bumperBot.on('voiceStateUpdate', () => {
 });
 
 bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
+  // We want to display the disboard status if something happened
   if (
-    newPresence.status === 'offline' ||
-    (oldPresence && oldPresence.status === 'offline')
+    newPresence.userID === process.env.DISBOARD_BOT_ID ||
+    oldPresence?.userID === process.env.DISBOARD_BOT_ID
   ) {
-    getMembersCount(bumperBot);
-    // We want to display the disboard status if something happened
-    if (
-      newPresence.userID === process.env.DISBOARD_BOT_ID ||
-      oldPresence?.userID === process.env.DISBOARD_BOT_ID
-    ) {
-      const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
-      const countdownChannel = server?.channels.cache.get(
-        process.env.BUMP_COUNTDOWN_CHANNEL_ID!
+    const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
+    const countdownChannel = server?.channels.cache.get(
+      process.env.BUMP_COUNTDOWN_CHANNEL_ID!
+    );
+    if (newPresence.status === 'offline') {
+      countdownChannel?.setName('🔕 Bumps Offline');
+    } else {
+      countdownChannel?.setName('⌛ Bumps revenus');
+      disboardTimeoutId = setTimeout(
+        () => handleCountdown(server!, true),
+        8 * 60000
       );
-      if (newPresence.status === 'offline') {
-        countdownChannel?.setName('🔕 Bumps Offline');
-      } else {
-        countdownChannel?.setName('⌛ Bumps revenus');
-        disboardTimeoutId = setTimeout(
-          () => handleCountdown(server!, true),
-          8 * 60000
-        );
-      }
     }
   }
 });
@@ -164,7 +158,7 @@ function handleCountdown(server: discord.Guild, countdownUpdate = false) {
 
   if (countdownUpdate) {
     const timeDifference = getTimeDifferenceWithLastBump();
-    if (timeDifference <= 7200000) {
+    if (0 < timeDifference && timeDifference <= 7200000) {
       const countdownMinutes = 120 - Math.floor(timeDifference / 60000);
       const hours = Math.floor(countdownMinutes / 60);
       const minutes = countdownMinutes % 60;
@@ -203,6 +197,9 @@ function setCountdownInterval(
         `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`
       );
     }
+
+    // We refresh the membours count
+    getMembersCount(bumperBot);
   }, 60000);
 }
 

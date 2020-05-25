@@ -40,7 +40,12 @@ export function updateLastBump() {
 
 // Return the time difference from now to the last bump in milliseconds
 export function getTimeDifferenceWithLastBump(): number {
-  const lastBump = new Date(getLastBump().bumpedAt);
-  const now = new Date();
-  return lastBump ? now.getTime() - lastBump.getTime() : 0;
+  const lastBump = getLastBump();
+  if (lastBump) {
+    const lastBumpDate = new Date(getLastBump().bumpedAt);
+    const now = new Date();
+    return now.getTime() - lastBumpDate.getTime();
+  } else {
+    return 0;
+  }
 }
