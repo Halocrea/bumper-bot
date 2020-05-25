@@ -155,6 +155,7 @@ function handleCountdown(server: discord.Guild, countdownUpdate = false) {
 
   // We clear the Disboard timeout because if we're here, it means that we don't need it anymore
   clearTimeout(disboardTimeoutId);
+  clearInterval(intervalId);
 
   if (countdownUpdate) {
     const timeDifference = getTimeDifferenceWithLastBump();
@@ -172,7 +173,6 @@ function handleCountdown(server: discord.Guild, countdownUpdate = false) {
     }
   } else {
     // Initialization
-    clearInterval(intervalId);
     let countdownMinutes = 120;
     countdownChannel?.setName(`⏳ 2h00 avant le bump !`);
 
@@ -189,7 +189,7 @@ function setCountdownInterval(
     countdownMinutes--;
     const hours = Math.floor(countdownMinutes / 60);
     const minutes = countdownMinutes % 60;
-    if (hours === 0 && minutes === 0) {
+    if (hours <= 0 && minutes <= 0) {
       countdownChannel?.setName(`🔔 C'est l'heure du bump ! 🔔`);
       clearInterval(intervalId);
     } else {
