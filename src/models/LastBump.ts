@@ -42,5 +42,5 @@ export function updateLastBump() {
 export function getTimeDifferenceWithLastBump(): number {
   const lastBump = new Date(getLastBump().bumpedAt);
   const now = new Date();
-  return now.getTime() - lastBump.getTime();
+  return lastBump ? now.getTime() - lastBump.getTime() : 0;
 }
