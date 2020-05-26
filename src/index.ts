@@ -58,6 +58,7 @@ bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
       process.env.BUMP_COUNTDOWN_CHANNEL_ID!
     );
     if (newPresence.status === 'offline') {
+      clearInterval(intervalId);
       countdownChannel?.setName('🔕 Bumps Offline');
     } else {
       countdownChannel?.setName('⌛ Bumps revenus');
