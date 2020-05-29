@@ -26,6 +26,7 @@ bumperBot.once('ready', () => {
     type: 'LISTENING',
   });
   getMembersCount(bumperBot);
+  setInterval(() => getMembersCount(bumperBot), 10000);
 
   const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
   handleCountdown(server!, true);
@@ -68,10 +69,6 @@ bumperBot.on('rateLimit', async (rateLimitInfo) => {
   } catch (err) {
     console.log(err);
   }
-});
-
-bumperBot.on('voiceStateUpdate', () => {
-  getMembersCount(bumperBot);
 });
 
 bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
