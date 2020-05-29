@@ -33,7 +33,7 @@ bumperBot.once('ready', () => {
 });
 
 bumperBot.on('rateLimit', async (rateLimitInfo) => {
-  const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
+  //const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
   // const commandsChannel = server?.channels.resolve(
   //   process.env.COMMANDS_CHANNEL_ID!
   // );
@@ -44,7 +44,6 @@ bumperBot.on('rateLimit', async (rateLimitInfo) => {
   // }
   // send the error info to the bot's maintainer
   try {
-    console.log(rateLimitInfo);
     const maintainer = await bumperBot.users.fetch(
       process.env.MAINTAINER_ID || ''
     );
