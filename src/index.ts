@@ -222,9 +222,6 @@ function setCountdownInterval(
         `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`
       );
     }
-
-    // We refresh the membours count
-    getMembersCount(bumperBot);
   }, 60000);
 }
 
