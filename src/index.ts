@@ -34,14 +34,14 @@ bumperBot.once('ready', () => {
 
 bumperBot.on('rateLimit', async (rateLimitInfo) => {
   const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
-  const commandsChannel = server?.channels.resolve(
-    process.env.COMMANDS_CHANNEL_ID!
-  );
-  if (commandsChannel && commandsChannel instanceof discord.TextChannel) {
-    commandsChannel.send(
-      `Il semblerait qu'on ait fait sauter le rate limit les mecs, du coup il doit y avoir un bug quelque part, contactez les admins et/ou mes devs svp.`
-    );
-  }
+  // const commandsChannel = server?.channels.resolve(
+  //   process.env.COMMANDS_CHANNEL_ID!
+  // );
+  // if (commandsChannel && commandsChannel instanceof discord.TextChannel) {
+  //   commandsChannel.send(
+  //     `Il semblerait qu'on ait fait sauter le rate limit les mecs, du coup il doit y avoir un bug quelque part, contactez les admins et/ou mes devs svp.`
+  //   );
+  // }
   // send the error info to the bot's maintainer
   try {
     console.log(rateLimitInfo);
