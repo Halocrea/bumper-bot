@@ -31,7 +31,7 @@ bumperBot.once('ready', () => {
   handleCountdown(server!, true);
 });
 
-bumperBot.on('rateLimit', async () => {
+bumperBot.on('rateLimit', async (rateLimitInfo) => {
   const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
   const commandsChannel = server?.channels.resolve(
     process.env.COMMANDS_CHANNEL_ID!
@@ -40,6 +40,33 @@ bumperBot.on('rateLimit', async () => {
     commandsChannel.send(
       `Il semblerait qu'on ait fait sauter le rate limit les mecs, du coup il doit y avoir un bug quelque part, contactez les admins et/ou mes devs svp.`
     );
+  }
+  // send the error info to the bot's maintainer
+  try {
+    console.log(rateLimitInfo);
+    const maintainer = await bumperBot.users.fetch(
+      process.env.MAINTAINER_ID || ''
+    );
+    if (maintainer) {
+      await maintainer.send(
+        new discord.MessageEmbed()
+          .setColor('#ff0000')
+          .setTitle('RateLimit atteint')
+          .setDescription(
+            'L\'évènement "rateLimit" a été déclenché pour moi ; j\'ai obtenu les infos suivantes :'
+          )
+          .addField(
+            'Méthode qui a déclenchée le rate limit',
+            rateLimitInfo.method
+          )
+          .addField('Chemin', rateLimitInfo.path)
+          .addField('Route', rateLimitInfo.route)
+          .addField('Timeout', rateLimitInfo.timeout, true)
+          .addField('Limite', rateLimitInfo.limit, true)
+      );
+    } else console.log("couldn't send the rateLimitInfo to Grena");
+  } catch (err) {
+    console.log(err);
   }
 });
 
