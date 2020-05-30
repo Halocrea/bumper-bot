@@ -1,9 +1,6 @@
 import * as discord from 'discord.js';
 import * as dotenv from 'dotenv';
-import {
-  updateLastBump,
-  getTimeDifferenceWithLastBump,
-} from './models/LastBump';
+import { updateLastBump, getTimeDifferenceWithLastBump } from './models/LastBump';
 import {
   getPreviousBumpers,
   addLastBumper,
@@ -26,27 +23,16 @@ bumperBot.once('ready', () => {
     type: 'LISTENING',
   });
   getMembersCount(bumperBot);
-  setInterval(() => getMembersCount(bumperBot), 10000);
+  setInterval(() => getMembersCount(bumperBot), 60000);
 
   const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
   handleCountdown(server!, true);
 });
 
 bumperBot.on('rateLimit', async (rateLimitInfo) => {
-  //const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
-  // const commandsChannel = server?.channels.resolve(
-  //   process.env.COMMANDS_CHANNEL_ID!
-  // );
-  // if (commandsChannel && commandsChannel instanceof discord.TextChannel) {
-  //   commandsChannel.send(
-  //     `Il semblerait qu'on ait fait sauter le rate limit les mecs, du coup il doit y avoir un bug quelque part, contactez les admins et/ou mes devs svp.`
-  //   );
-  // }
   // send the error info to the bot's maintainer
   try {
-    const maintainer = await bumperBot.users.fetch(
-      process.env.MAINTAINER_ID || ''
-    );
+    const maintainer = await bumperBot.users.fetch(process.env.MAINTAINER_ID || '');
     if (maintainer) {
       await maintainer.send(
         new discord.MessageEmbed()
@@ -55,16 +41,13 @@ bumperBot.on('rateLimit', async (rateLimitInfo) => {
           .setDescription(
             'L\'évènement "rateLimit" a été déclenché pour moi ; j\'ai obtenu les infos suivantes :'
           )
-          .addField(
-            'Méthode qui a déclenchée le rate limit',
-            rateLimitInfo.method
-          )
+          .addField('Méthode qui a déclenchée le rate limit', rateLimitInfo.method)
           .addField('Chemin', rateLimitInfo.path)
           .addField('Route', rateLimitInfo.route)
           .addField('Timeout', rateLimitInfo.timeout, true)
           .addField('Limite', rateLimitInfo.limit, true)
       );
-    } else console.log("couldn't send the rateLimitInfo to Grena");
+    } else console.log(`couldn't send the rateLimitInfo to Grena`);
   } catch (err) {
     console.log(err);
   }
@@ -77,18 +60,13 @@ bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
     oldPresence?.userID === process.env.DISBOARD_BOT_ID
   ) {
     const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
-    const countdownChannel = server?.channels.cache.get(
-      process.env.BUMP_COUNTDOWN_CHANNEL_ID!
-    );
+    const countdownChannel = server?.channels.cache.get(process.env.BUMP_COUNTDOWN_CHANNEL_ID!);
     if (newPresence.status === 'offline') {
       clearInterval(intervalId);
       countdownChannel?.setName('🔕 Bumps Offline');
     } else {
       countdownChannel?.setName('⌛ Bumps revenus');
-      disboardTimeoutId = setTimeout(
-        () => handleCountdown(server!, true),
-        8 * 60000
-      );
+      disboardTimeoutId = setTimeout(() => handleCountdown(server!, true), 8 * 60000);
     }
   }
 });
@@ -96,29 +74,35 @@ bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
 bumperBot.on('message', (msg) => {
   if (!msg.guild) return; // no DM allowed
 
-  if (
-    msg.author.id === process.env.DISBOARD_BOT_ID &&
-    msg.embeds.length > 0 &&
-    (msg.embeds[0].description?.match(/:thumbsup:/) ||
-      msg.embeds[0].description?.match(/👍/))
-  ) {
-    // We save the last bump date
-    const bumpDate = updateLastBump();
-    const idMatching = msg.embeds[0].description.match(/[0-9]{18}/);
-    if (idMatching) {
-      const bumperId = idMatching[0];
-      const bumper = msg.guild.members.resolve(bumperId);
-      if (bumper) {
-        // We get back at the bump message to see if the bump is gifted or not
-        const bumpingMessage = bumper.lastMessage;
-        if (
-          bumpingMessage?.mentions.members &&
-          bumpingMessage?.mentions.members.size > 0
-        ) {
-          const giftedMember = bumpingMessage?.mentions.members.first();
-          handleBumper(giftedMember!, msg.guild, bumpDate, msg);
-        } else {
-          handleBumper(bumper, msg.guild, bumpDate, msg);
+  if (msg.content.startsWith('test')) {
+    if (msg.author.id === '153809151221301257') msg.channel.send('test');
+    msg.channel.send({
+      embed: {
+        title: 'BUMP',
+        description: `Bump effectué les tryharders *Mpfmfmfmfpfffmpff* ${msg.author} 👍`,
+      },
+    });
+  } else {
+    if (
+      msg.author.id === process.env.DISBOARD_BOT_ID &&
+      msg.embeds.length > 0 &&
+      (msg.embeds[0].description?.match(/:thumbsup:/) || msg.embeds[0].description?.match(/👍/))
+    ) {
+      // We save the last bump date
+      const bumpDate = updateLastBump();
+      const idMatching = msg.embeds[0].description.match(/[0-9]{18}/);
+      if (idMatching) {
+        const bumperId = idMatching[0];
+        const bumper = msg.guild.members.resolve(bumperId);
+        if (bumper) {
+          // We get back at the bump message to see if the bump is gifted or not
+          const bumpingMessage = bumper.lastMessage;
+          if (bumpingMessage?.mentions.members && bumpingMessage?.mentions.members.size > 0) {
+            const giftedMember = bumpingMessage?.mentions.members.first();
+            handleBumper(giftedMember!, msg.guild, bumpDate, msg);
+          } else {
+            handleBumper(bumper, msg.guild, bumpDate, msg);
+          }
         }
       }
     }
@@ -135,30 +119,20 @@ async function handleBumper(
   const previousBumpers = getPreviousBumpers(bumpDate);
 
   addLastBumper({ bumpedAt: bumpDate, bumperId: bumper.id });
-  msg.channel.send(
-    `✅ Bump effectué pour : ***${bumper.nickname ?? bumper.user.username}***`
-  );
+  msg.channel.send(`✅ Bump effectué pour : ***${bumper.nickname ?? bumper.user.username}***`);
   if (previousBumpers && previousBumpers.length > 0) {
     // We don't want to update the role on someone who had the previous bump
-    if (
-      !previousBumpers?.some(
-        (previousBumper) => previousBumper.bumperId === bumper.id
-      )
-    ) {
+    if (!previousBumpers?.some((previousBumper) => previousBumper.bumperId === bumper.id)) {
       await bumper.roles.add(process.env.BUMPER_ROLE_ID!);
     }
 
     // We clear the previous bumpers to keep the database clean
     clearTimeout(timeoutId);
     timeoutId = setTimeout(async () => {
-      const lastBumpers = getLastBumpers(bumpDate).map(
-        (bumper) => bumper.bumperId
-      );
+      const lastBumpers = getLastBumpers(bumpDate).map((bumper) => bumper.bumperId);
       for (let previousBumper of previousBumpers) {
         if (!lastBumpers.includes(previousBumper.bumperId)) {
-          const bumperToRemoveRole = bumperRole?.members.get(
-            previousBumper.bumperId
-          );
+          const bumperToRemoveRole = bumperRole?.members.get(previousBumper.bumperId);
           await bumperToRemoveRole?.roles.remove(process.env.BUMPER_ROLE_ID!);
         }
       }
@@ -173,9 +147,7 @@ async function handleBumper(
 }
 
 function handleCountdown(server: discord.Guild, countdownUpdate = false) {
-  const countdownChannel = server.channels.cache.get(
-    process.env.BUMP_COUNTDOWN_CHANNEL_ID!
-  );
+  const countdownChannel = server.channels.cache.get(process.env.BUMP_COUNTDOWN_CHANNEL_ID!);
 
   // We clear the Disboard timeout because if we're here, it means that we don't need it anymore
   clearTimeout(disboardTimeoutId);
@@ -204,22 +176,43 @@ function handleCountdown(server: discord.Guild, countdownUpdate = false) {
   }
 }
 
-function setCountdownInterval(
-  countdownMinutes: number,
-  countdownChannel: discord.GuildChannel
-) {
+function setCountdownInterval(countdownMinutes: number, countdownChannel: discord.GuildChannel) {
   // Every minute, we refresh the countdown
-  intervalId = setInterval(() => {
+  intervalId = setInterval(async () => {
+    const now = new Date();
     countdownMinutes--;
     const hours = Math.floor(countdownMinutes / 60);
     const minutes = countdownMinutes % 60;
     if (hours <= 0 && minutes <= 0) {
-      countdownChannel?.setName(`🔔 C'est l'heure du bump ! 🔔`);
-      clearInterval(intervalId);
+      console.log('new bump');
+      try {
+        await countdownChannel.setName(`🔔 C'est l'heure du bump ! 🔔`);
+        clearInterval(intervalId);
+      } catch (error) {
+        console.error(error);
+      }
     } else {
-      countdownChannel?.setName(
-        `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`
-      );
+      try {
+        console.log(
+          `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}: ${hours}h${
+            minutes < 10 ? '0' + minutes : minutes
+          }`
+        );
+        await countdownChannel.edit({
+          name: `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`,
+          // name: 'Bah oui',
+        });
+        // .then((_) =>
+        //   console.log(
+        //     `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}: waiting bump ${hours}h${
+        //       minutes < 10 ? '0' + minutes : minutes
+        //     }`
+        //   )
+        // )
+        // .catch(console.error);
+      } catch (error) {
+        console.error(error);
+      }
     }
   }, 60000);
 }
@@ -230,9 +223,7 @@ function getMembersCount(bumperBot: discord.Client) {
   const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
   if (server) {
     let peopleInVoice = 0;
-    const voiceChannels = server.channels.cache.filter(
-      (channel) => channel.type === 'voice'
-    );
+    const voiceChannels = server.channels.cache.filter((channel) => channel.type === 'voice');
 
     if (voiceChannels && voiceChannels.size > 0) {
       voiceChannels.each((channel) => {
@@ -240,10 +231,9 @@ function getMembersCount(bumperBot: discord.Client) {
       });
     }
 
-    const countingChannel = server.channels.cache.get(
-      process.env.MEMBERS_COUNT_CHANNEL_ID!
-    );
+    const countingChannel = server.channels.cache.get(process.env.MEMBERS_COUNT_CHANNEL_ID!);
     if (countingChannel) {
+      console.log('Mise à jour du compteur de membres');
       if (peopleInVoice < 2) {
         const peopleOnline = server.members.cache.filter(
           (member) => member.presence.status !== 'offline'
@@ -253,9 +243,9 @@ function getMembersCount(bumperBot: discord.Client) {
           countingChannel.setName(newName);
         }
       } else {
-        const newName = `📣 ${peopleInVoice} en vocal`;
+        const newName = `📢 ${peopleInVoice} en vocal`;
         if (countingChannel.name !== newName) {
-          countingChannel.setName(`📢 ${peopleInVoice} en vocal`);
+          countingChannel.setName(newName);
         }
       }
     }
