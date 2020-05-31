@@ -22,11 +22,10 @@ bumperBot.once('ready', () => {
   bumperBot.user?.setActivity(`les tryharders`, {
     type: 'LISTENING',
   });
-  getMembersCount(bumperBot);
-  setInterval(() => getMembersCount(bumperBot), 60000);
+  getMembersCount();
+  setInterval(() => getMembersCount(), 60000);
 
-  const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
-  handleCountdown(server!, true);
+  handleCountdown(true);
 });
 
 bumperBot.on('rateLimit', async (rateLimitInfo) => {
@@ -66,7 +65,7 @@ bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
       countdownChannel?.setName('🔕 Bumps Offline');
     } else {
       countdownChannel?.setName('⌛ Bumps revenus');
-      disboardTimeoutId = setTimeout(() => handleCountdown(server!, true), 8 * 60000);
+      disboardTimeoutId = setTimeout(() => handleCountdown(true), 8 * 60000);
     }
   }
 });
@@ -139,87 +138,100 @@ async function handleBumper(
       deletePreviousBumpers(bumpDate);
     }, 1500);
 
-    handleCountdown(server);
+    handleCountdown();
   } else {
     await bumper.roles.add(process.env.BUMPER_ROLE_ID!);
-    handleCountdown(server);
+    handleCountdown();
   }
 }
 
-function handleCountdown(server: discord.Guild, countdownUpdate = false) {
-  const countdownChannel = server.channels.cache.get(process.env.BUMP_COUNTDOWN_CHANNEL_ID!);
+function handleCountdown(countdownUpdate = false) {
+  const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
+  if (server) {
+    const countdownChannel = server.channels.cache.get(process.env.BUMP_COUNTDOWN_CHANNEL_ID!);
+    if (countdownChannel) {
+      // We clear the Disboard timeout because if we're here, it means that we don't need it anymore
+      clearTimeout(disboardTimeoutId);
+      clearInterval(intervalId);
 
-  // We clear the Disboard timeout because if we're here, it means that we don't need it anymore
-  clearTimeout(disboardTimeoutId);
-  clearInterval(intervalId);
+      if (countdownUpdate) {
+        const timeDifference = getTimeDifferenceWithLastBump();
+        if (0 < timeDifference && timeDifference <= 7200000) {
+          let countdownMinutes = 120 - Math.floor(timeDifference / 60000);
+          const hours = Math.floor(countdownMinutes / 60);
+          const minutes = countdownMinutes % 60;
+          countdownChannel?.setName(
+            `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`
+          );
 
-  if (countdownUpdate) {
-    const timeDifference = getTimeDifferenceWithLastBump();
-    if (0 < timeDifference && timeDifference <= 7200000) {
-      const countdownMinutes = 120 - Math.floor(timeDifference / 60000);
+          intervalId = setInterval(() => {
+            countdownMinutes--;
+            setCountdownInterval(countdownMinutes);
+          }, 60000);
+        } else {
+          countdownChannel?.setName(`🔔 C'est l'heure du bump ! 🔔`);
+        }
+      } else {
+        // Initialization
+        let countdownMinutes = 120;
+        countdownChannel?.setName(`⏳ 2h00 avant le bump !`);
+
+        intervalId = setInterval(() => {
+          countdownMinutes--;
+          setCountdownInterval(countdownMinutes);
+        }, 60000);
+      }
+    }
+  }
+}
+
+// , countdownChannel: discord.GuildChannel
+async function setCountdownInterval(countdownMinutes: number) {
+  // Every minute, we refresh the countdown
+  // intervalId = setInterval(async () => {
+  const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
+  if (server) {
+    const countdownChannel = server.channels.cache.get(process.env.BUMP_COUNTDOWN_CHANNEL_ID!);
+    if (countdownChannel) {
+      const now = new Date();
+      const time = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}:`;
       const hours = Math.floor(countdownMinutes / 60);
       const minutes = countdownMinutes % 60;
-      countdownChannel?.setName(
-        `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`
-      );
-
-      setCountdownInterval(countdownMinutes, countdownChannel!);
-    } else {
-      countdownChannel?.setName(`🔔 C'est l'heure du bump ! 🔔`);
+      if (hours <= 0 && minutes <= 0) {
+        console.log(`${time} new bump`);
+        try {
+          const newName = `🔔 C'est l'heure du bump ! 🔔`;
+          await countdownChannel.setName(newName);
+          clearInterval(intervalId);
+        } catch (error) {
+          console.error(error);
+        }
+      } else {
+        try {
+          console.log(`${time} ${hours}h${minutes < 10 ? '0' + minutes : minutes}`);
+          const newName = `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`;
+          countdownChannel
+            .setName(newName)
+            .then((_) =>
+              console.log(
+                `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}: update cd ${hours}h${
+                  minutes < 10 ? '0' + minutes : minutes
+                }`
+              )
+            )
+            .catch(console.error);
+        } catch (error) {
+          console.error(error);
+        }
+      }
     }
-  } else {
-    // Initialization
-    let countdownMinutes = 120;
-    countdownChannel?.setName(`⏳ 2h00 avant le bump !`);
-
-    setCountdownInterval(countdownMinutes, countdownChannel!);
   }
-}
-
-function setCountdownInterval(countdownMinutes: number, countdownChannel: discord.GuildChannel) {
-  // Every minute, we refresh the countdown
-  intervalId = setInterval(async () => {
-    const now = new Date();
-    countdownMinutes--;
-    const hours = Math.floor(countdownMinutes / 60);
-    const minutes = countdownMinutes % 60;
-    if (hours <= 0 && minutes <= 0) {
-      console.log('new bump');
-      try {
-        await countdownChannel.setName(`🔔 C'est l'heure du bump ! 🔔`);
-        clearInterval(intervalId);
-      } catch (error) {
-        console.error(error);
-      }
-    } else {
-      try {
-        console.log(
-          `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}: ${hours}h${
-            minutes < 10 ? '0' + minutes : minutes
-          }`
-        );
-        await countdownChannel.edit({
-          name: `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`,
-          // name: 'Bah oui',
-        });
-        // .then((_) =>
-        //   console.log(
-        //     `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}: waiting bump ${hours}h${
-        //       minutes < 10 ? '0' + minutes : minutes
-        //     }`
-        //   )
-        // )
-        // .catch(console.error);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-  }, 60000);
+  // }, 60000);
 }
 
 // We want to display the amount of people in voice chat
 // Else we want to display the amount of people online
-function getMembersCount(bumperBot: discord.Client) {
+function getMembersCount() {
   const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
   if (server) {
     let peopleInVoice = 0;
@@ -233,7 +245,9 @@ function getMembersCount(bumperBot: discord.Client) {
 
     const countingChannel = server.channels.cache.get(process.env.MEMBERS_COUNT_CHANNEL_ID!);
     if (countingChannel) {
-      console.log('Mise à jour du compteur de membres');
+      const now = new Date();
+      const time = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}:`;
+      console.log(`${time} Mise à jour du compteur de membres`);
       if (peopleInVoice < 2) {
         const peopleOnline = server.members.cache.filter(
           (member) => member.presence.status !== 'offline'
