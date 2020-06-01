@@ -25,7 +25,7 @@ bumperBot.once('ready', () => {
   getMembersCount();
   setInterval(() => getMembersCount(), 6 * 60000);
 
-  handleCountdown(true);
+  // handleCountdown(true);
 });
 
 bumperBot.on('rateLimit', async (rateLimitInfo) => {
@@ -79,6 +79,7 @@ bumperBot.on('message', async (msg) => {
     } else {
       let countdownMinutes = 120 - Math.floor(timeDifference / 60000);
       const timeRemaining = getTimeRemaining(countdownMinutes);
+      const seconds = (7200 - Math.floor(timeDifference / 1000)) % 60;
       msg.channel.send(
         new discord.MessageEmbed()
           .setColor(15968821)
@@ -86,7 +87,7 @@ bumperBot.on('message', async (msg) => {
           .setDescription(
             `Temps jusqu'au prochain bump: ${timeRemaining.hours}h${
               timeRemaining.minutes < 10 ? '0' + timeRemaining.minutes : timeRemaining.minutes
-            }`
+            } et ${seconds} secondes (à peu près)`
           )
       );
     }
