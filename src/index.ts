@@ -19,11 +19,11 @@ let intervalId: NodeJS.Timeout;
 let disboardTimeoutId: NodeJS.Timeout;
 
 bumperBot.once('ready', () => {
-  bumperBot.user?.setActivity(`les tryharders`, {
+  bumperBot.user?.setActivity(`${process.env.COMMAND_PREFIX!}`, {
     type: 'LISTENING',
   });
   getMembersCount();
-  setInterval(() => getMembersCount(), 60000);
+  setInterval(() => getMembersCount(), 6 * 60000);
 
   handleCountdown(true);
 });
@@ -52,27 +52,12 @@ bumperBot.on('rateLimit', async (rateLimitInfo) => {
   }
 });
 
-bumperBot.on('presenceUpdate', (oldPresence, newPresence) => {
-  // We want to display the disboard status if something happened
-  if (
-    newPresence.userID === process.env.DISBOARD_BOT_ID ||
-    oldPresence?.userID === process.env.DISBOARD_BOT_ID
-  ) {
-    const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
-    const countdownChannel = server?.channels.cache.get(process.env.BUMP_COUNTDOWN_CHANNEL_ID!);
-    if (newPresence.status === 'offline') {
-      clearInterval(intervalId);
-      countdownChannel?.setName('🔕 Bumps Offline');
-    } else {
-      countdownChannel?.setName('⌛ Bumps revenus');
-      disboardTimeoutId = setTimeout(() => handleCountdown(true), 8 * 60000);
-    }
-  }
-});
-
-bumperBot.on('message', (msg) => {
+bumperBot.on('message', async (msg) => {
   if (!msg.guild) return; // no DM allowed
 
+  const disboardBot = await bumperBot!.guilds
+    .resolve(process.env.GUILD_ID!)!
+    .members.fetch(process.env.DISBOARD_BOT_ID!);
   if (msg.content.startsWith('test')) {
     if (msg.author.id === '153809151221301257') msg.channel.send('test');
     msg.channel.send({
@@ -81,6 +66,39 @@ bumperBot.on('message', (msg) => {
         description: `Bump effectué les tryharders *Mpfmfmfmfpfffmpff* ${msg.author} 👍`,
       },
     });
+  } else if (msg.content.startsWith(process.env.COMMAND_PREFIX!)) {
+    // To know precisely when the next bump gonna happen
+    const timeDifference = getTimeDifferenceWithLastBump();
+    if (0 < timeDifference && timeDifference >= 7200000) {
+      msg.channel.send(
+        new discord.MessageEmbed()
+          .setColor(8781568)
+          .setTitle('🔔 Bump disponible')
+          .setDescription('Le bump est dispo, fonce !')
+      );
+    } else {
+      let countdownMinutes = 120 - Math.floor(timeDifference / 60000);
+      const timeRemaining = getTimeRemaining(countdownMinutes);
+      msg.channel.send(
+        new discord.MessageEmbed()
+          .setColor(15968821)
+          .setTitle('⏳ Compte à rebours')
+          .setDescription(
+            `Temps jusqu'au prochain bump: ${timeRemaining.hours}h${
+              timeRemaining.minutes < 10 ? '0' + timeRemaining.minutes : timeRemaining.minutes
+            }`
+          )
+      );
+    }
+  } else if (msg.content.startsWith('!d bump') && disboardBot.presence.status === 'offline') {
+    msg.channel.send(
+      new discord.MessageEmbed()
+        .setColor('#FF0000')
+        .setTitle('🔕 Disboard bot offline')
+        .setDescription(
+          "Désolé, le Disboard bot est offline pour le moment... Mais reste à l'affût !"
+        )
+    );
   } else {
     if (
       msg.author.id === process.env.DISBOARD_BOT_ID &&
@@ -158,13 +176,28 @@ function handleCountdown(countdownUpdate = false) {
         const timeDifference = getTimeDifferenceWithLastBump();
         if (0 < timeDifference && timeDifference <= 7200000) {
           let countdownMinutes = 120 - Math.floor(timeDifference / 60000);
-          const hours = Math.floor(countdownMinutes / 60);
-          const minutes = countdownMinutes % 60;
+          const timeRemaining = getTimeRemaining(countdownMinutes);
           countdownChannel?.setName(
-            `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`
+            `⏳ ${timeRemaining.hours}h${
+              timeRemaining.minutes < 10 ? '0' + timeRemaining.minutes : timeRemaining.minutes
+            } avant le bump !`
           );
 
-          setCountdownInterval(countdownMinutes);
+          // We recalibrate the countdown so it goes 10 minutes by 10 minutes
+          const minutesToCalibrate = countdownMinutes % 10;
+          if (minutesToCalibrate > 0) {
+            setTimeout(() => {
+              const minutes = timeRemaining.minutes - minutesToCalibrate;
+              countdownChannel?.setName(
+                `⏳ ${timeRemaining.hours}h${
+                  minutes < 10 ? '0' + minutes : minutes
+                } avant le bump !`
+              );
+              setCountdownInterval(countdownMinutes);
+            }, minutesToCalibrate * 60000);
+          } else {
+            setCountdownInterval(countdownMinutes);
+          }
         } else {
           countdownChannel?.setName(`🔔 C'est l'heure du bump ! 🔔`);
         }
@@ -179,21 +212,16 @@ function handleCountdown(countdownUpdate = false) {
   }
 }
 
-// , countdownChannel: discord.GuildChannel
 async function setCountdownInterval(countdownMinutes: number) {
-  // Every minute, we refresh the countdown
+  // Every 10 minutes, we refresh the countdown
   intervalId = setInterval(async () => {
     const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
     if (server) {
       const countdownChannel = server.channels.cache.get(process.env.BUMP_COUNTDOWN_CHANNEL_ID!);
       if (countdownChannel) {
-        const now = new Date();
-        const time = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}:`;
-        --countdownMinutes;
-        const hours = Math.floor(countdownMinutes / 60);
-        const minutes = countdownMinutes % 60;
-        if (hours <= 0 && minutes <= 0) {
-          console.log(`${time} new bump`);
+        countdownMinutes = countdownMinutes - 10;
+        const timeRemaining = getTimeRemaining(countdownMinutes);
+        if (timeRemaining.hours <= 0 && timeRemaining.minutes <= 0) {
           try {
             const newName = `🔔 C'est l'heure du bump ! 🔔`;
             await countdownChannel.setName(newName);
@@ -203,25 +231,23 @@ async function setCountdownInterval(countdownMinutes: number) {
           }
         } else {
           try {
-            console.log(`${time} ${hours}h${minutes < 10 ? '0' + minutes : minutes}`);
-            const newName = `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`;
-            countdownChannel
-              .setName(newName)
-              .then((_) =>
-                console.log(
-                  `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}: update cd ${hours}h${
-                    minutes < 10 ? '0' + minutes : minutes
-                  }`
-                )
-              )
-              .catch(console.error);
+            const newName = `⏳ ${timeRemaining.hours}h${
+              timeRemaining.minutes < 10 ? '0' + timeRemaining.minutes : timeRemaining.minutes
+            } avant le bump !`;
+            await countdownChannel.setName(newName);
           } catch (error) {
             console.error(error);
           }
         }
       }
     }
-  }, 60000);
+  }, 10 * 60000);
+}
+
+function getTimeRemaining(countdownMinutes: number): { hours: number; minutes: number } {
+  const hours = Math.floor(countdownMinutes / 60);
+  const minutes = countdownMinutes % 60;
+  return { hours, minutes };
 }
 
 // We want to display the amount of people in voice chat
@@ -240,9 +266,6 @@ function getMembersCount() {
 
     const countingChannel = server.channels.cache.get(process.env.MEMBERS_COUNT_CHANNEL_ID!);
     if (countingChannel) {
-      const now = new Date();
-      const time = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}:`;
-      console.log(`${time} Mise à jour du compteur de membres`);
       if (peopleInVoice < 2) {
         const peopleOnline = server.members.cache.filter(
           (member) => member.presence.status !== 'offline'
