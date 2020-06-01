@@ -25,7 +25,7 @@ bumperBot.once('ready', () => {
   getMembersCount();
   setInterval(() => getMembersCount(), 6 * 60000);
 
-  // handleCountdown(true);
+  handleCountdown(true);
 });
 
 bumperBot.on('rateLimit', async (rateLimitInfo) => {
