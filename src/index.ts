@@ -58,15 +58,7 @@ bumperBot.on('message', async (msg) => {
   const disboardBot = await bumperBot!.guilds
     .resolve(process.env.GUILD_ID!)!
     .members.fetch(process.env.DISBOARD_BOT_ID!);
-  if (msg.content.startsWith('test')) {
-    if (msg.author.id === '153809151221301257') msg.channel.send('test');
-    msg.channel.send({
-      embed: {
-        title: 'BUMP',
-        description: `Bump effectué les tryharders *Mpfmfmfmfpfffmpff* ${msg.author} 👍`,
-      },
-    });
-  } else if (msg.content.startsWith(process.env.COMMAND_PREFIX!)) {
+  if (msg.content.startsWith(process.env.COMMAND_PREFIX!)) {
     // To know precisely when the next bump gonna happen
     const timeDifference = getTimeDifferenceWithLastBump();
     if (0 < timeDifference && timeDifference >= 7200000) {
