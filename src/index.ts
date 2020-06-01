@@ -164,10 +164,7 @@ function handleCountdown(countdownUpdate = false) {
             `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`
           );
 
-          intervalId = setInterval(() => {
-            countdownMinutes--;
-            setCountdownInterval(countdownMinutes);
-          }, 60000);
+          setCountdownInterval(countdownMinutes);
         } else {
           countdownChannel?.setName(`🔔 C'est l'heure du bump ! 🔔`);
         }
@@ -176,10 +173,7 @@ function handleCountdown(countdownUpdate = false) {
         let countdownMinutes = 120;
         countdownChannel?.setName(`⏳ 2h00 avant le bump !`);
 
-        intervalId = setInterval(() => {
-          countdownMinutes--;
-          setCountdownInterval(countdownMinutes);
-        }, 60000);
+        setCountdownInterval(countdownMinutes);
       }
     }
   }
@@ -188,45 +182,46 @@ function handleCountdown(countdownUpdate = false) {
 // , countdownChannel: discord.GuildChannel
 async function setCountdownInterval(countdownMinutes: number) {
   // Every minute, we refresh the countdown
-  // intervalId = setInterval(async () => {
-  const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
-  if (server) {
-    const countdownChannel = server.channels.cache.get(process.env.BUMP_COUNTDOWN_CHANNEL_ID!);
-    if (countdownChannel) {
-      const now = new Date();
-      const time = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}:`;
-      const hours = Math.floor(countdownMinutes / 60);
-      const minutes = countdownMinutes % 60;
-      if (hours <= 0 && minutes <= 0) {
-        console.log(`${time} new bump`);
-        try {
-          const newName = `🔔 C'est l'heure du bump ! 🔔`;
-          await countdownChannel.setName(newName);
-          clearInterval(intervalId);
-        } catch (error) {
-          console.error(error);
-        }
-      } else {
-        try {
-          console.log(`${time} ${hours}h${minutes < 10 ? '0' + minutes : minutes}`);
-          const newName = `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`;
-          countdownChannel
-            .setName(newName)
-            .then((_) =>
-              console.log(
-                `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}: update cd ${hours}h${
-                  minutes < 10 ? '0' + minutes : minutes
-                }`
+  intervalId = setInterval(async () => {
+    const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
+    if (server) {
+      const countdownChannel = server.channels.cache.get(process.env.BUMP_COUNTDOWN_CHANNEL_ID!);
+      if (countdownChannel) {
+        const now = new Date();
+        const time = `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}:`;
+        --countdownMinutes;
+        const hours = Math.floor(countdownMinutes / 60);
+        const minutes = countdownMinutes % 60;
+        if (hours <= 0 && minutes <= 0) {
+          console.log(`${time} new bump`);
+          try {
+            const newName = `🔔 C'est l'heure du bump ! 🔔`;
+            await countdownChannel.setName(newName);
+            clearInterval(intervalId);
+          } catch (error) {
+            console.error(error);
+          }
+        } else {
+          try {
+            console.log(`${time} ${hours}h${minutes < 10 ? '0' + minutes : minutes}`);
+            const newName = `⏳ ${hours}h${minutes < 10 ? '0' + minutes : minutes} avant le bump !`;
+            countdownChannel
+              .setName(newName)
+              .then((_) =>
+                console.log(
+                  `${now.getHours()}:${now.getMinutes()}:${now.getSeconds()}: update cd ${hours}h${
+                    minutes < 10 ? '0' + minutes : minutes
+                  }`
+                )
               )
-            )
-            .catch(console.error);
-        } catch (error) {
-          console.error(error);
+              .catch(console.error);
+          } catch (error) {
+            console.error(error);
+          }
         }
       }
     }
-  }
-  // }, 60000);
+  }, 60000);
 }
 
 // We want to display the amount of people in voice chat
