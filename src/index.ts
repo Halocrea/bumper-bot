@@ -32,7 +32,7 @@ bumperBot.once('ready', () => {
   getMembersCount();
   setInterval(() => getMembersCount(), 6 * 60000);
 
-  // handleCountdown(true);
+  handleCountdown(true);
 });
 
 bumperBot.on('rateLimit', async (rateLimitInfo) => {
@@ -189,10 +189,10 @@ async function handleBumper(
       deletePreviousBumpers(bumpDate);
     }, 1500);
 
-    // handleCountdown();
+    handleCountdown();
   } else {
     await bumper.roles.add(process.env.BUMPER_ROLE_ID!);
-    // handleCountdown();
+    handleCountdown();
   }
 }
 
