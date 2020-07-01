@@ -18,9 +18,16 @@ let intervalId: NodeJS.Timeout;
 // To reset the countdown when the disboard bot is alive again
 let disboardTimeoutId: NodeJS.Timeout;
 
+// gifs for when we have to handle bumps ourselves
+const successfulBump = [
+  'https://media.discordapp.net/attachments/443844498074632192/674203710909579264/halfjaw-speech.gif',
+  'https://media.discordapp.net/attachments/572511139632775204/679346631178715146/giphy.gif',
+  'https://media.discordapp.net/attachments/614835042023112707/675388268598263822/ezgif.com-video-to-gif_14.gif',
+];
+
 bumperBot.once('ready', () => {
-  bumperBot.user?.setActivity(`${process.env.COMMAND_PREFIX!}`, {
-    type: 'LISTENING',
+  bumperBot.user?.setActivity(`halocrea.com`, {
+    type: 'WATCHING',
   });
   getMembersCount();
   setInterval(() => getMembersCount(), 6 * 60000);
@@ -58,6 +65,7 @@ bumperBot.on('message', async (msg) => {
   const disboardBot = await bumperBot!.guilds
     .resolve(process.env.GUILD_ID!)!
     .members.fetch(process.env.DISBOARD_BOT_ID!);
+
   if (msg.content.startsWith(process.env.COMMAND_PREFIX!)) {
     // To know precisely when the next bump gonna happen
     const timeDifference = getTimeDifferenceWithLastBump();
@@ -86,40 +94,70 @@ bumperBot.on('message', async (msg) => {
       );
     }
   } else if (msg.content.startsWith('!d bump') && disboardBot.presence.status === 'offline') {
-    msg.channel.send(
-      new discord.MessageEmbed()
-        .setColor('#FF0000')
-        .setTitle('🔕 Disboard bot offline')
-        .setDescription(
-          "Désolé, le Disboard bot est offline pour le moment... Mais reste à l'affût !"
-        )
-    );
+    const timeDifference = getTimeDifferenceWithLastBump();
+    if (timeDifference === 0 || timeDifference >= 7200000) {
+      // Bumper validation -> handle if the bump is gifted or not
+      findBumper(msg, true);
+
+      // Validation message
+      const pepeKing = bumperBot.emojis.cache.find((emoji) => emoji.name === 'Pepe_King');
+      msg.channel.send(
+        new discord.MessageEmbed()
+          .setColor('#00ae86')
+          .setTitle('MAJOR LEAGUE BUMPING')
+          .setURL('https://halocrea.com/')
+          .setDescription(
+            `${msg.author}, \nBump effectué 👍 \n${pepeKing} Le rôle "Bumper" est maintenant au bénéficiaire !`
+          )
+          .setImage(successfulBump[Math.floor(Math.random() * successfulBump.length)])
+      );
+    } else {
+      msg.channel.send(
+        new discord.MessageEmbed()
+          .setColor('#eb4c61')
+          .setTitle("Eeeeet c'est NON !")
+          .setURL('https://halocrea.com/')
+          .setDescription(
+            `Faut bumper au bon moment, ${msg.author}. Tu sais, quand le gros compte à rebours en haut à gauche dit "🔔 C'est l'heure du bump ! 🔔".`
+          )
+          .setImage(
+            'https://media.discordapp.net/attachments/443844498074632192/674694609389092872/ezgif.com-video-to-gif_15.gif'
+          )
+      );
+    }
   } else {
     if (
       msg.author.id === process.env.DISBOARD_BOT_ID &&
       msg.embeds.length > 0 &&
       (msg.embeds[0].description?.match(/:thumbsup:/) || msg.embeds[0].description?.match(/👍/))
     ) {
-      // We save the last bump date
-      const bumpDate = updateLastBump();
-      const idMatching = msg.embeds[0].description.match(/[0-9]{18}/);
-      if (idMatching) {
-        const bumperId = idMatching[0];
-        const bumper = msg.guild.members.resolve(bumperId);
-        if (bumper) {
-          // We get back at the bump message to see if the bump is gifted or not
-          const bumpingMessage = bumper.lastMessage;
-          if (bumpingMessage?.mentions.members && bumpingMessage?.mentions.members.size > 0) {
-            const giftedMember = bumpingMessage?.mentions.members.first();
-            handleBumper(giftedMember!, msg.guild, bumpDate, msg);
-          } else {
-            handleBumper(bumper, msg.guild, bumpDate, msg);
-          }
-        }
-      }
+      // Bumper validation -> handle if the bump is gifted or not
+      findBumper(msg);
     }
   }
 });
+
+function findBumper(msg: discord.Message, disboardBotOff = false) {
+  // We save the last bump date
+  const bumpDate = updateLastBump();
+  const idMatching = disboardBotOff
+    ? [msg.author.id]
+    : msg.embeds[0].description!.match(/[0-9]{18}/);
+  if (idMatching) {
+    const bumperId = idMatching[0];
+    const bumper = msg.guild!.members.resolve(bumperId);
+    if (bumper) {
+      // We get back at the bump message to see if the bump is gifted or not
+      const bumpingMessage = bumper.lastMessage;
+      if (bumpingMessage?.mentions.members && bumpingMessage?.mentions.members.size > 0) {
+        const giftedMember = bumpingMessage?.mentions.members.first();
+        handleBumper(giftedMember!, msg.guild!, bumpDate, msg);
+      } else {
+        handleBumper(bumper, msg.guild!, bumpDate, msg);
+      }
+    }
+  }
+}
 
 async function handleBumper(
   bumper: discord.GuildMember,
