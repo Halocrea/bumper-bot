@@ -78,7 +78,9 @@ bumperBot.on('message', async (msg) => {
           .setTitle('⏳ Compte à rebours')
           .setDescription(
             `Temps jusqu'au prochain bump: ${timeRemaining.hours}h${
-              timeRemaining.minutes < 10 ? '0' + timeRemaining.minutes : timeRemaining.minutes
+              timeRemaining.minutes < 10
+                ? '0' + (timeRemaining.minutes - 1)
+                : timeRemaining.minutes - 1
             } et ${seconds} secondes (à peu près)`
           )
       );
