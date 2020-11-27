@@ -9,7 +9,15 @@ import {
 } from './models/LastBumpers';
 
 dotenv.config();
-const bumperBot = new discord.Client();
+const bumperBot = new discord.Client({
+  ws: {
+    intents: [
+      'GUILDS',
+      'GUILD_MEMBERS',
+      'GUILD_PRESENCES'
+    ]
+  }
+});
 
 // To help handle multi bumps
 let timeoutId: NodeJS.Timeout;
