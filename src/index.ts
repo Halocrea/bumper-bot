@@ -14,6 +14,7 @@ const bumperBot = new discord.Client({
     intents: [
       'GUILDS',
       'GUILD_MEMBERS',
+      'GUILD_MESSAGES',
       'GUILD_PRESENCES'
     ]
   }
