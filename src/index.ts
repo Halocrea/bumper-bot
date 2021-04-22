@@ -38,8 +38,6 @@ bumperBot.once('ready', () => {
   bumperBot.user?.setActivity(`halocrea.com`, {
     type: 'WATCHING',
   });
-  getMembersCount();
-  setInterval(() => getMembersCount(), 6 * 60000);
 
   handleCountdown(true);
 });
@@ -290,40 +288,6 @@ function getTimeRemaining(countdownMinutes: number): { hours: number; minutes: n
   const hours = Math.floor(countdownMinutes / 60);
   const minutes = countdownMinutes % 60;
   return { hours, minutes };
-}
-
-// We want to display the amount of people in voice chat
-// Else we want to display the amount of people online
-function getMembersCount() {
-  const server = bumperBot.guilds.resolve(process.env.GUILD_ID!);
-  if (server) {
-    let peopleInVoice = 0;
-    const voiceChannels = server.channels.cache.filter((channel) => channel.type === 'voice');
-
-    if (voiceChannels && voiceChannels.size > 0) {
-      voiceChannels.each((channel) => {
-        peopleInVoice += channel.members.size;
-      });
-    }
-
-    const countingChannel = server.channels.cache.get(process.env.MEMBERS_COUNT_CHANNEL_ID!);
-    if (countingChannel) {
-      if (peopleInVoice < 2) {
-        const peopleOnline = server.members.cache.filter(
-          (member) => member.presence.status !== 'offline'
-        ).size;
-        const newName = `⚡ ${peopleOnline} en ligne`;
-        if (countingChannel.name !== newName) {
-          countingChannel.setName(newName);
-        }
-      } else {
-        const newName = `📢 ${peopleInVoice} en vocal`;
-        if (countingChannel.name !== newName) {
-          countingChannel.setName(newName);
-        }
-      }
-    }
-  }
 }
 
 bumperBot.login(process.env.TOKEN);
