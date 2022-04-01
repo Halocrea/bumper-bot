@@ -68,6 +68,11 @@ bumperBot.on('rateLimit', async (rateLimitInfo) => {
   }
 });
 
+bumperBot.on('interactionCreate', async interaction => {
+  if (!interaction.isCommand()) return;
+  sendDMToMaintainer(`${interaction}`);
+});
+
 bumperBot.on('messageCreate', async (msg) => {
   if (!msg.guild) return; // no DM allowed
 
@@ -146,6 +151,7 @@ bumperBot.on('messageCreate', async (msg) => {
       (msg.embeds[0].description?.match(/:thumbsup:/) || msg.embeds[0].description?.match(/👍/))
     ) {
       // Bumper validation -> handle if the bump is gifted or not
+      sendDMToMaintainer('Found Disboard bot message');
       findBumper(msg);
     }
   }
@@ -168,6 +174,7 @@ function findBumper(msg: discord.Message, disboardBotOff = false) {
       //   handleBumper(giftedMember!, msg.guild!, bumpDate, msg);
       // } else {
         handleBumper(bumper, msg.guild!, bumpDate, msg);
+        sendDMToMaintainer(`Found Bumper ${bumper.displayName}`)
       // }
     }
   }
@@ -295,6 +302,17 @@ function getTimeRemaining(countdownMinutes: number): { hours: number; minutes: n
   const hours = Math.floor(countdownMinutes / 60);
   const minutes = countdownMinutes % 60;
   return { hours, minutes };
+}
+
+async function sendDMToMaintainer(content: string) {
+  try {
+    const maintainer = await bumperBot.users.fetch(process.env.MAINTAINER_ID || '');
+    if (maintainer) {
+      await maintainer.send(content);
+    } else console.log(`couldn't send DM to Grena`);
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 bumperBot.login(process.env.TOKEN);
