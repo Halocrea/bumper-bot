@@ -10,14 +10,12 @@ import {
 
 dotenv.config();
 const bumperBot = new discord.Client({
-  ws: {
-    intents: [
-      'GUILDS',
-      'GUILD_MEMBERS',
-      'GUILD_MESSAGES',
-      'GUILD_PRESENCES'
-    ]
-  }
+  intents: [
+    'GUILDS',
+    'GUILD_MEMBERS',
+    'GUILD_MESSAGES',
+    'GUILD_PRESENCES'
+  ]
 });
 
 // To help handle multi bumps
@@ -48,17 +46,21 @@ bumperBot.on('rateLimit', async (rateLimitInfo) => {
     const maintainer = await bumperBot.users.fetch(process.env.MAINTAINER_ID || '');
     if (maintainer) {
       await maintainer.send(
-        new discord.MessageEmbed()
-          .setColor('#ff0000')
-          .setTitle('RateLimit atteint')
-          .setDescription(
-            'L\'évènement "rateLimit" a été déclenché pour moi ; j\'ai obtenu les infos suivantes :'
-          )
-          .addField('Méthode qui a déclenchée le rate limit', rateLimitInfo.method)
-          .addField('Chemin', rateLimitInfo.path)
-          .addField('Route', rateLimitInfo.route)
-          .addField('Timeout', rateLimitInfo.timeout, true)
-          .addField('Limite', rateLimitInfo.limit, true)
+        {
+          embeds: [
+            new discord.MessageEmbed()
+              .setColor('#ff0000')
+              .setTitle('RateLimit atteint')
+              .setDescription(
+                'L\'évènement "rateLimit" a été déclenché pour moi ; j\'ai obtenu les infos suivantes :'
+              )
+              .addField('Méthode qui a déclenchée le rate limit', rateLimitInfo.method)
+              .addField('Chemin', rateLimitInfo.path)
+              .addField('Route', rateLimitInfo.route)
+              .addField('Timeout', `${rateLimitInfo.timeout}`, true)
+              .addField('Limite', `${rateLimitInfo.limit}`, true)
+          ]
+        }
       );
     } else console.log(`couldn't send the rateLimitInfo to Grena`);
   } catch (err) {
@@ -66,41 +68,42 @@ bumperBot.on('rateLimit', async (rateLimitInfo) => {
   }
 });
 
-bumperBot.on('message', async (msg) => {
+bumperBot.on('messageCreate', async (msg) => {
   if (!msg.guild) return; // no DM allowed
 
   const disboardBot = await bumperBot!.guilds
     .resolve(process.env.GUILD_ID!)!
     .members.fetch(process.env.DISBOARD_BOT_ID!);
 
-  if (msg.content.startsWith(process.env.COMMAND_PREFIX!)) {
-    // To know precisely when the next bump gonna happen
-    const timeDifference = getTimeDifferenceWithLastBump();
-    if (0 < timeDifference && timeDifference >= 7200000) {
-      msg.channel.send(
-        new discord.MessageEmbed()
-          .setColor(8781568)
-          .setTitle('🔔 Bump disponible')
-          .setDescription('Le bump est dispo, fonce !')
-      );
-    } else {
-      let countdownMinutes = 120 - Math.floor(timeDifference / 60000);
-      const timeRemaining = getTimeRemaining(countdownMinutes);
-      const seconds = (7200 - Math.floor(timeDifference / 1000)) % 60;
-      msg.channel.send(
-        new discord.MessageEmbed()
-          .setColor(15968821)
-          .setTitle('⏳ Compte à rebours')
-          .setDescription(
-            `Temps jusqu'au prochain bump: ${timeRemaining.hours}h${
-              timeRemaining.minutes < 10
-                ? '0' + (timeRemaining.minutes - 1)
-                : timeRemaining.minutes - 1
-            } et ${seconds} secondes (à peu près)`
-          )
-      );
-    }
-  } else if (msg.content.startsWith('!d bump') && disboardBot.presence.status === 'offline') {
+  // if (msg.content.startsWith(process.env.COMMAND_PREFIX!)) {
+  //   // To know precisely when the next bump gonna happen
+  //   const timeDifference = getTimeDifferenceWithLastBump();
+  //   if (0 < timeDifference && timeDifference >= 7200000) {
+  //     msg.channel.send(
+  //       new discord.MessageEmbed()
+  //         .setColor(8781568)
+  //         .setTitle('🔔 Bump disponible')
+  //         .setDescription('Le bump est dispo, fonce !')
+  //     );
+  //   } else {
+  //     let countdownMinutes = 120 - Math.floor(timeDifference / 60000);
+  //     const timeRemaining = getTimeRemaining(countdownMinutes);
+  //     const seconds = (7200 - Math.floor(timeDifference / 1000)) % 60;
+  //     msg.channel.send(
+  //       new discord.MessageEmbed()
+  //         .setColor(15968821)
+  //         .setTitle('⏳ Compte à rebours')
+  //         .setDescription(
+  //           `Temps jusqu'au prochain bump: ${timeRemaining.hours}h${
+  //             timeRemaining.minutes < 10
+  //               ? '0' + (timeRemaining.minutes - 1)
+  //               : timeRemaining.minutes - 1
+  //           } et ${seconds} secondes (à peu près)`
+  //         )
+  //     );
+  //   }
+  // } else if (msg.content.startsWith('!d bump') && disboardBot.presence.status === 'offline') {
+  if (msg.content.startsWith('!d bump') && disboardBot.presence?.status === 'offline') {
     const timeDifference = getTimeDifferenceWithLastBump();
     if (timeDifference === 0 || timeDifference >= 7200000) {
       // Bumper validation -> handle if the bump is gifted or not
@@ -108,8 +111,9 @@ bumperBot.on('message', async (msg) => {
 
       // Validation message
       const pepeKing = bumperBot.emojis.cache.find((emoji) => emoji.name === 'Pepe_King');
-      msg.channel.send(
-        new discord.MessageEmbed()
+      msg.channel.send({
+        embeds: [
+          new discord.MessageEmbed()
           .setColor('#00ae86')
           .setTitle('MAJOR LEAGUE BUMPING')
           .setURL('https://halocrea.com/')
@@ -117,20 +121,23 @@ bumperBot.on('message', async (msg) => {
             `${msg.author}, \nBump effectué 👍 \n${pepeKing} Le rôle "Bumper" est maintenant au bénéficiaire !`
           )
           .setImage(successfulBump[Math.floor(Math.random() * successfulBump.length)])
-      );
+        ]
+      });
     } else {
-      msg.channel.send(
-        new discord.MessageEmbed()
-          .setColor('#eb4c61')
-          .setTitle("Eeeeet c'est NON !")
-          .setURL('https://halocrea.com/')
-          .setDescription(
-            `Faut bumper au bon moment, ${msg.author}. Tu sais, quand le gros compte à rebours en haut à gauche dit "🔔 C'est l'heure du bump ! 🔔".`
-          )
-          .setImage(
-            'https://media.discordapp.net/attachments/443844498074632192/674694609389092872/ezgif.com-video-to-gif_15.gif'
-          )
-      );
+      msg.channel.send({
+        embeds: [
+          new discord.MessageEmbed()
+            .setColor('#eb4c61')
+            .setTitle("Eeeeet c'est NON !")
+            .setURL('https://halocrea.com/')
+            .setDescription(
+              `Faut bumper au bon moment, ${msg.author}. Tu sais, quand le gros compte à rebours en haut à gauche dit "🔔 C'est l'heure du bump ! 🔔".`
+            )
+            .setImage(
+              'https://media.discordapp.net/attachments/443844498074632192/674694609389092872/ezgif.com-video-to-gif_15.gif'
+            )
+        ]
+      });
     }
   } else {
     if (
@@ -155,13 +162,13 @@ function findBumper(msg: discord.Message, disboardBotOff = false) {
     const bumper = msg.guild!.members.resolve(bumperId);
     if (bumper) {
       // We get back at the bump message to see if the bump is gifted or not
-      const bumpingMessage = bumper.lastMessage;
-      if (bumpingMessage?.mentions.members && bumpingMessage?.mentions.members.size > 0) {
-        const giftedMember = bumpingMessage?.mentions.members.first();
-        handleBumper(giftedMember!, msg.guild!, bumpDate, msg);
-      } else {
+      // const bumpingMessage = bumper.lastMessage;
+      // if (bumpingMessage?.mentions.members && bumpingMessage?.mentions.members.size > 0) {
+      //   const giftedMember = bumpingMessage?.mentions.members.first();
+      //   handleBumper(giftedMember!, msg.guild!, bumpDate, msg);
+      // } else {
         handleBumper(bumper, msg.guild!, bumpDate, msg);
-      }
+      // }
     }
   }
 }

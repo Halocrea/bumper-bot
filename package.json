@@ -20,7 +20,7 @@
     "@types/ws": "^7.2.4",
     "@typescript-eslint/eslint-plugin": "^2.34.0",
     "better-sqlite3": "^7.0.1",
-    "discord.js": "^12.2.0",
+    "discord.js": "^13.6.0",
     "dotenv": "^8.2.0"
   },
   "devDependencies": {
