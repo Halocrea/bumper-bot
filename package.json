@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "main": "build/index.js",
   "scripts": {
-    "dev": "./node_modules/.bin/tsc -w",
+    "dev": "npx tsc -w",
     "build": "npx tsc",
     "start": "node ./build/index.js"
   },

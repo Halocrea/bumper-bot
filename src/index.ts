@@ -70,7 +70,7 @@ bumperBot.on('rateLimit', async (rateLimitInfo) => {
 
 bumperBot.on('interactionCreate', async interaction => {
   if (!interaction.isCommand()) return;
-  sendDMToMaintainer(`${interaction}`);
+  console.log(`${interaction}`);
 });
 
 bumperBot.on('messageCreate', async (msg) => {
@@ -108,7 +108,7 @@ bumperBot.on('messageCreate', async (msg) => {
   //     );
   //   }
   // } else if (msg.content.startsWith('!d bump') && disboardBot.presence.status === 'offline') {
-  if (msg.content.startsWith('!d bump') && disboardBot.presence?.status === 'offline') {
+  if (msg.content.startsWith('!d bump')) {
     const timeDifference = getTimeDifferenceWithLastBump();
     if (timeDifference === 0 || timeDifference >= 7200000) {
       // Bumper validation -> handle if the bump is gifted or not
@@ -151,7 +151,7 @@ bumperBot.on('messageCreate', async (msg) => {
       (msg.embeds[0].description?.match(/:thumbsup:/) || msg.embeds[0].description?.match(/👍/))
     ) {
       // Bumper validation -> handle if the bump is gifted or not
-      sendDMToMaintainer('Found Disboard bot message');
+      console.log('Found Disboard bot message');
       findBumper(msg);
     }
   }
@@ -174,7 +174,7 @@ function findBumper(msg: discord.Message, disboardBotOff = false) {
       //   handleBumper(giftedMember!, msg.guild!, bumpDate, msg);
       // } else {
         handleBumper(bumper, msg.guild!, bumpDate, msg);
-        sendDMToMaintainer(`Found Bumper ${bumper.displayName}`)
+        console.log(`Found Bumper ${bumper.displayName}`)
       // }
     }
   }
