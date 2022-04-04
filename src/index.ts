@@ -152,6 +152,8 @@ bumperBot.on('messageCreate', async (msg) => {
     ) {
       // Bumper validation -> handle if the bump is gifted or not
       console.log('Found Disboard bot message');
+      console.log(msg);
+      sendDMToMaintainer(msg.toString());
       findBumper(msg);
     }
   }
