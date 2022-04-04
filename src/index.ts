@@ -153,7 +153,6 @@ bumperBot.on('messageCreate', async (msg) => {
       // Bumper validation -> handle if the bump is gifted or not
       console.log('Found Disboard bot message');
       console.log(msg);
-      sendDMToMaintainer(msg.toString());
       findBumper(msg);
     }
   }
@@ -162,11 +161,10 @@ bumperBot.on('messageCreate', async (msg) => {
 function findBumper(msg: discord.Message, disboardBotOff = false) {
   // We save the last bump date
   const bumpDate = updateLastBump();
-  const idMatching = disboardBotOff
-    ? [msg.author.id]
-    : msg.embeds[0].description!.match(/[0-9]{18}/);
-  if (idMatching) {
-    const bumperId = idMatching[0];
+  const bumperId = disboardBotOff
+    ? msg.author.id
+    : msg.interaction?.user.id;
+  if (bumperId) {
     const bumper = msg.guild!.members.resolve(bumperId);
     if (bumper) {
       // We get back at the bump message to see if the bump is gifted or not
