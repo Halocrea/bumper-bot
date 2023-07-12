@@ -19,7 +19,7 @@
     "@types/better-sqlite3": "^5.4.0",
     "@types/ws": "^7.2.4",
     "@typescript-eslint/eslint-plugin": "^2.34.0",
-    "better-sqlite3": "^7.0.1",
+    "better-sqlite3": "^7.6.2",
     "discord.js": "^13.6.0",
     "dotenv": "^8.2.0"
   },
